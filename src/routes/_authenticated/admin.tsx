@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: Admin,
 });
 
-type Row = Record<string, string | null> & { id: string; estado: keyof typeof ESTADOS };
+type Row = import("@/integrations/supabase/types").Database["public"]["Tables"]["donaciones"]["Row"];
 
 function Admin() {
   const estado = useServerFn(estadoAdmin);
@@ -141,12 +141,12 @@ function Detalle({ row, onClose }: { row: Row; onClose: () => void }) {
   const reenviar = useServerFn(reenviarWhatsApp);
   const actualizar = useServerFn(actualizarDonacion);
   const [edit, setEdit] = useState(false);
-  const [vals, setVals] = useState<FormValues>(() => Object.fromEntries(Object.keys(emptyDonacion).map((k) => [k, row[k] ?? ""])) as FormValues);
+  const [vals, setVals] = useState<FormValues>(() => Object.fromEntries(Object.keys(emptyDonacion).map((k) => [k, (row as unknown as Record<string, string | null>)[k] ?? ""])) as FormValues);
   const base = slug(row.nombre_completo ?? "registro");
   const sign = async () => {
     const { data, error } = await supabase.storage.from("documentos").createSignedUrls([`${row.id}/formulario.pdf`, `${row.id}/declaracion-jurada.pdf`], 600);
     if (error || !data) throw new Error("Documentos no disponibles");
-    return { f: data[0].signedUrl, d: data[1].signedUrl };
+    return { f: data[0]?.signedUrl ?? "", d: data[1]?.signedUrl ?? "" };
   };
   const act = async (fn: () => Promise<unknown>) => { try { await fn(); } catch (e) { toast.error(e instanceof Error ? e.message : "Error"); } };
   return (
@@ -165,7 +165,7 @@ function Detalle({ row, onClose }: { row: Row; onClose: () => void }) {
             {row.whatsapp_error && <p className="text-sm text-destructive">WhatsApp: {row.whatsapp_error}</p>}
             <dl className="grid gap-2 sm:grid-cols-2">
               {(Object.keys(fieldLabels) as (keyof typeof fieldLabels)[]).map((k) => (
-                <div key={k} className="border-b pb-1"><dt className="text-xs text-muted-foreground">{fieldLabels[k]}</dt><dd>{k === "fecha_recepcion" && row[k] ? fechaLarga(row[k]!).texto : row[k] || "—"}</dd></div>
+                <div key={k} className="border-b pb-1"><dt className="text-xs text-muted-foreground">{fieldLabels[k]}</dt><dd>{k === "fecha_recepcion" && (row as unknown as Record<string,string>)[k] ? fechaLarga(row[k] as string).texto : (row as unknown as Record<string,string>)[k] || "—"}</dd></div>
               ))}
             </dl>
             <div className="grid gap-2 sm:grid-cols-3">

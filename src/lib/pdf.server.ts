@@ -64,7 +64,7 @@ function wrapSegments(segs: Seg[], fonts: { r: PDFFont; b: PDFFont }, size: numb
       continue;
     }
     if (lw + ww > maxW && line.length) {
-      while (line.length && /^\s+$/.test(line[line.length - 1].t)) line.pop();
+      while (line.length && /^\s+$/.test(line[line.length - 1]!.t)) line.pop();
       lines.push(line);
       line = [];
       lw = 0;

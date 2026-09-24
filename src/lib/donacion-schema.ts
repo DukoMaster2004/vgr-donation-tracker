@@ -114,5 +114,5 @@ export const ESTADOS = {
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 export function fechaLarga(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
-  return { dia: String(d), mes: MESES[m - 1] ?? "", anio: String(y), texto: `${d} de ${MESES[m - 1]} de ${y}` };
+  return { dia: String(d), mes: MESES[(m ?? 1) - 1] ?? "", anio: String(y), texto: `${d} de ${MESES[(m ?? 1) - 1]} de ${y}` };
 }

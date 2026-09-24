@@ -7,25 +7,16 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       POST: async ({ request }) => {
         const secret = process.env["WHATSAPP_API_KEY"];
         if (!secret) return new Response("Not configured", { status: 503 });
-        let body: string;
+        let payload: unknown;
         try {
-          const verified = await verifyWebhookRequest(request, { secret, maxBodyBytes: 4 * 1024 * 1024 } as never);
-          body = typeof (verified as { body?: unknown }).body === "string"
-            ? (verified as { body: string }).body
-            : JSON.stringify((verified as { payload?: unknown }).payload ?? verified);
+          const verified = await verifyWebhookRequest({ req: request, secret, maxBodyBytes: 4 * 1024 * 1024 });
+          payload = verified.payload;
         } catch {
           return new Response("Invalid signature", { status: 401 });
         }
         const deliveryId = request.headers.get("X-Lovable-Delivery") ?? "";
         const event = request.headers.get("X-Lovable-Event") ?? "";
         if (!deliveryId || !event) return new Response("Missing headers", { status: 400 });
-
-        let payload: unknown;
-        try {
-          payload = JSON.parse(body);
-        } catch {
-          return new Response("Bad JSON", { status: 400 });
-        }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { applyStatuses, processPending } = await import("@/lib/whatsapp-status.server");

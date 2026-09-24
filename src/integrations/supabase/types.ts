@@ -14,16 +14,184 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      donaciones: {
+        Row: {
+          apellido_materno: string
+          apellido_paterno: string
+          busqueda: string | null
+          ciudad: string
+          codigo_identificacion: string
+          codigo_postal: string
+          created_at: string
+          declaracion_pdf_url: string | null
+          departamento: string
+          direccion: string
+          direccion_linea_2: string | null
+          distrito: string
+          dni_ce: string
+          email: string
+          estado: Database["public"]["Enums"]["estado_donacion"]
+          estado_region: string
+          fecha_recepcion: string
+          formulario_pdf_url: string | null
+          id: string
+          iglesia: string | null
+          nombre_completo: string
+          nombre_pastor: string
+          pais: string
+          primer_nombre: string
+          provincia: string
+          telefono: string
+          tipo_donacion: string
+          updated_at: string
+          whatsapp_error: string | null
+          whatsapp_message_id: string | null
+          whatsapp_status: string | null
+          whatsapp_status_at: string | null
+        }
+        Insert: {
+          apellido_materno: string
+          apellido_paterno: string
+          busqueda?: string | null
+          ciudad: string
+          codigo_identificacion: string
+          codigo_postal: string
+          created_at?: string
+          declaracion_pdf_url?: string | null
+          departamento: string
+          direccion: string
+          direccion_linea_2?: string | null
+          distrito: string
+          dni_ce: string
+          email: string
+          estado?: Database["public"]["Enums"]["estado_donacion"]
+          estado_region: string
+          fecha_recepcion: string
+          formulario_pdf_url?: string | null
+          id?: string
+          iglesia?: string | null
+          nombre_completo: string
+          nombre_pastor: string
+          pais: string
+          primer_nombre: string
+          provincia: string
+          telefono: string
+          tipo_donacion?: string
+          updated_at?: string
+          whatsapp_error?: string | null
+          whatsapp_message_id?: string | null
+          whatsapp_status?: string | null
+          whatsapp_status_at?: string | null
+        }
+        Update: {
+          apellido_materno?: string
+          apellido_paterno?: string
+          busqueda?: string | null
+          ciudad?: string
+          codigo_identificacion?: string
+          codigo_postal?: string
+          created_at?: string
+          declaracion_pdf_url?: string | null
+          departamento?: string
+          direccion?: string
+          direccion_linea_2?: string | null
+          distrito?: string
+          dni_ce?: string
+          email?: string
+          estado?: Database["public"]["Enums"]["estado_donacion"]
+          estado_region?: string
+          fecha_recepcion?: string
+          formulario_pdf_url?: string | null
+          id?: string
+          iglesia?: string | null
+          nombre_completo?: string
+          nombre_pastor?: string
+          pais?: string
+          primer_nombre?: string
+          provincia?: string
+          telefono?: string
+          tipo_donacion?: string
+          updated_at?: string
+          whatsapp_error?: string | null
+          whatsapp_message_id?: string | null
+          whatsapp_status?: string | null
+          whatsapp_status_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          delivery_id: string
+          event: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          received_at: string
+        }
+        Insert: {
+          delivery_id: string
+          event: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Update: {
+          delivery_id?: string
+          event?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      estado_donacion:
+        | "pendiente"
+        | "confirmado"
+        | "documentos_generados"
+        | "enviado_whatsapp"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +318,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      estado_donacion: [
+        "pendiente",
+        "confirmado",
+        "documentos_generados",
+        "enviado_whatsapp",
+      ],
+    },
   },
 } as const

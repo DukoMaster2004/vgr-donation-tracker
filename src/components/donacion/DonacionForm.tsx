@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fieldLabels, type DonacionInput } from "@/lib/donacion-schema";
-import { generateLocalFingerprint, type FingerprintResult } from "@/lib/fingerprint";
+import { generateLocalFingerprint, svgToPngDataUrl, type FingerprintResult } from "@/lib/fingerprint";
 import { cn } from "@/lib/utils";
 
 export type FormValues = Record<keyof DonacionInput, string>;
@@ -182,9 +182,15 @@ function FingerprintCapture({ value, onChange }: { value: string; onChange: (v: 
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const imageDataUrl = String(reader.result ?? "");
-      onChange(imageDataUrl);
+      try {
+        const result = await generateLocalFingerprint(imageDataUrl);
+        const fingerprintPng = await svgToPngDataUrl(result.visual_fingerprint);
+        onChange(fingerprintPng);
+      } catch {
+        onChange(imageDataUrl);
+      }
     };
     reader.readAsDataURL(file);
   };

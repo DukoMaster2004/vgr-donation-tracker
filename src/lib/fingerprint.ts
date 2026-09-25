@@ -15,6 +15,44 @@ export type FingerprintResult = {
   analysis: FingerprintAnalysis;
 };
 
+const FALLBACK_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB4L8A4QAAAABJRU5ErkJggg==';
+
+export async function svgToPngDataUrl(svg: string): Promise<string> {
+  if (typeof document === 'undefined') {
+    return FALLBACK_PNG_DATA_URL;
+  }
+
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+
+  try {
+    const loaded = await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('No se pudo cargar la huella generada.'));
+      img.src = url;
+    });
+
+    if (!loaded) return FALLBACK_PNG_DATA_URL;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      return FALLBACK_PNG_DATA_URL;
+    }
+
+    context.fillStyle = '#f4f1ed';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 function decodeBase64DataUrl(dataUrl: string): Uint8Array {
   const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/i.exec(dataUrl);
   if (!match) {

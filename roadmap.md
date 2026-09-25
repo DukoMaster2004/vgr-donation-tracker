@@ -1,3 +1,3 @@
 - [x] App de registro de donaciones
-- [ ] Preparar despliegue en Vercel
+- [x] Preparar despliegue en Vercel
 - [ ] Conectar WhatsApp (bloqueado: el usuario rechazó la conexión)

@@ -1,5 +1,7 @@
-import { Resvg } from "@resvg/resvg-js";
+import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import { fechaLarga } from "./donacion-schema";
+import { ARIMO_BOLD_B64, ARIMO_REGULAR_B64 } from "./arimo-fonts";
+import { RESVG_WASM_B64 } from "./resvg-wasm";
 import type { DonacionRow } from "./pdf.server";
 
 const W = 900;
@@ -14,6 +16,36 @@ function esc(v: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function initResvg(): Promise<void> {
+  try {
+    // On Cloudflare Workers, Nitro/unwasm rewrites this import to the emitted .wasm asset,
+    // which workerd compiles ahead of time to a WebAssembly.Module.
+    const { default: wasm } = (await import("@resvg/resvg-wasm/index_bg.wasm?module")) as {
+      default: WebAssembly.Module;
+    };
+    if (!(wasm instanceof WebAssembly.Module)) {
+      throw new Error("resvg wasm import did not yield a WebAssembly.Module");
+    }
+    await initWasm(wasm);
+  } catch {
+    // Node (vite dev / prerender): the ?module import isn't a compiled module here, so
+    // read the wasm bytes from node_modules instead.
+    const { createRequire } = await import("node:module");
+    const { readFile } = await import("node:fs/promises");
+    const wasmPath = createRequire(import.meta.url).resolve("@resvg/resvg-wasm/index_bg.wasm");
+    await initWasm(new Uint8Array(await readFile(wasmPath)));
+  }
+}
+
+await initResvg();
 
 /** Renders the donation record as a PNG so it can be sent as a WhatsApp image message. */
 export function buildAdminImage(d: DonacionRow): Buffer {
@@ -58,6 +90,20 @@ export function buildAdminImage(d: DonacionRow): Buffer {
     </svg>
   `;
 
-  const resvg = new Resvg(svg, { fitTo: { mode: "width", value: W } });
-  return resvg.render().asPng();
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: "width", value: W },
+    font: {
+      // Workers has no system fonts; Arimo is metric-compatible with Arial/Helvetica
+      // so the SVG's font-family list resolves to it without changing the layout.
+      fontBuffers: [b64ToBytes(ARIMO_REGULAR_B64), b64ToBytes(ARIMO_BOLD_B64)],
+      loadSystemFonts: false,
+      defaultFontFamily: "Arimo",
+      sansSerif: "Arimo",
+      serif: "Arimo",
+      cursive: "Arimo",
+      fantasy: "Arimo",
+      monospace: "Arimo",
+    },
+  });
+  return Buffer.from(resvg.render().asPng());
 }

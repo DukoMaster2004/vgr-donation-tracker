@@ -15,7 +15,7 @@ export type RegistroResult =
     };
 
 export const registrarDonacion = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => donacionSchema.parse(input))
+  .validator((input: unknown) => donacionSchema.parse(input))
   .handler(async ({ data }): Promise<RegistroResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const core = await import("./donaciones-core.server");
@@ -121,7 +121,7 @@ async function loadRow(id: string) {
 
 export const reenviarWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => idInput.parse(i))
+  .validator((i: unknown) => idInput.parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const { supabaseAdmin, row } = await loadRow(data.id);
@@ -136,7 +136,7 @@ export const reenviarWhatsApp = createServerFn({ method: "POST" })
 
 export const regenerarDocumentos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => idInput.parse(i))
+  .validator((i: unknown) => idInput.parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const { supabaseAdmin, row } = await loadRow(data.id);
@@ -147,7 +147,7 @@ export const regenerarDocumentos = createServerFn({ method: "POST" })
 
 export const actualizarDonacion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
+  .validator((i: unknown) =>
     z.object({ id: z.string().uuid(), values: donacionSchema }).parse(i),
   )
   .handler(async ({ data, context }) => {

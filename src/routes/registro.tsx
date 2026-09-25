@@ -156,9 +156,21 @@ function Registro() {
                     {fieldLabels[k]}
                   </dt>
                   <dd className="mt-0.5 break-words font-medium">
-                    {k === "fecha_recepcion" && values[k]
-                      ? fechaLarga(values[k]).texto
-                      : values[k] || "—"}
+                    {k === "firma" || k === "huella" ? (
+                      values[k] ? (
+                        <img
+                          src={values[k]}
+                          alt={fieldLabels[k]}
+                          className="h-20 rounded border bg-white object-contain p-0.5"
+                        />
+                      ) : (
+                        "—"
+                      )
+                    ) : k === "fecha_recepcion" && values[k] ? (
+                      fechaLarga(values[k]).texto
+                    ) : (
+                      values[k] || "—"
+                    )}
                   </dd>
                 </div>
               ))}

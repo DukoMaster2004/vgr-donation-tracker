@@ -33,7 +33,9 @@ export type Database = {
           estado: Database["public"]["Enums"]["estado_donacion"]
           estado_region: string
           fecha_recepcion: string
+          firma: string | null
           formulario_pdf_url: string | null
+          huella: string | null
           id: string
           iglesia: string | null
           nombre_completo: string
@@ -67,7 +69,9 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_donacion"]
           estado_region: string
           fecha_recepcion: string
+          firma?: string | null
           formulario_pdf_url?: string | null
+          huella?: string | null
           id?: string
           iglesia?: string | null
           nombre_completo: string
@@ -101,7 +105,9 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_donacion"]
           estado_region?: string
           fecha_recepcion?: string
+          firma?: string | null
           formulario_pdf_url?: string | null
+          huella?: string | null
           id?: string
           iglesia?: string | null
           nombre_completo?: string

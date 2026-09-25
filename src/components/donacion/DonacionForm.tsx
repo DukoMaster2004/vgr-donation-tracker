@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { SignaturePad } from "@/components/donacion/SignaturePad";
 import { fieldLabels, type DonacionInput } from "@/lib/donacion-schema";
 
 export type FormValues = Record<keyof DonacionInput, string>;
@@ -97,6 +98,30 @@ export function DonacionForm({ values, errors, onChange }: { values: FormValues;
           </div>
         </section>
       ))}
+      <section className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+        <h2 className="flex items-center gap-3 text-lg font-semibold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground">F</span>
+          Firma y huella del beneficiario
+        </h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <SignaturePad
+            id="f-firma"
+            label={fieldLabels.firma}
+            hint="Dibuje su firma con el dedo o el mouse"
+            value={values.firma}
+            error={errors.firma}
+            onChange={(v) => onChange("firma", v)}
+          />
+          <SignaturePad
+            id="f-huella"
+            label={fieldLabels.huella}
+            hint="Presione su pulgar sobre el recuadro"
+            value={values.huella}
+            error={errors.huella}
+            onChange={(v) => onChange("huella", v)}
+          />
+        </div>
+      </section>
     </div>
   );
 }

@@ -22,6 +22,8 @@ export type DonacionRow = {
   telefono: string;
   codigo_identificacion: string;
   fecha_recepcion: string;
+  firma?: string | null;
+  huella?: string | null;
 };
 
 // A4 in points
@@ -134,6 +136,27 @@ function wrapPlain(text: string, font: PDFFont, size: number, maxW: number) {
   return out;
 }
 
+function dataUrlBytes(dataUrl: string): Uint8Array {
+  return Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
+}
+
+async function drawDataUrlImage(
+  pdf: PDFDocument,
+  page: PDFPage,
+  dataUrl: string,
+  box: { x: number; y: number; w: number; h: number },
+) {
+  try {
+    const png = await pdf.embedPng(dataUrlBytes(dataUrl));
+    const scale = Math.min(box.w / png.width, box.h / png.height);
+    const w = png.width * scale;
+    const h = png.height * scale;
+    page.drawImage(png, { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, width: w, height: h });
+  } catch (e) {
+    console.error("No se pudo estampar la imagen en el PDF", e);
+  }
+}
+
 export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Declaración Jurada - ${d.nombre_completo}`);
@@ -200,6 +223,7 @@ export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
   // Signature + fingerprint block
   const baseY = 230;
   page.drawLine({ start: { x, y: baseY + 60 }, end: { x: x + 220, y: baseY + 60 }, thickness: 0.8, color: BLACK });
+  if (d.firma) await drawDataUrlImage(pdf, page, d.firma, { x, y: baseY + 63, w: 220, h: 55 });
   page.drawText("Firma", { x: x + 95, y: baseY + 46, size: 10, font: r, color: GREY });
   page.drawText("Nombre:", { x, y: baseY + 10, size: 12, font: b, color: BLACK });
   page.drawText(d.nombre_completo, { x: x + 58, y: baseY + 10, size: 11, font: r, color: BLACK, maxWidth: 260 });
@@ -208,6 +232,7 @@ export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
 
   const bx = W - 70 - 100;
   page.drawRectangle({ x: bx, y: baseY - 40, width: 100, height: 115, borderColor: BLACK, borderWidth: 1 });
+  if (d.huella) await drawDataUrlImage(pdf, page, d.huella, { x: bx + 6, y: baseY - 34, w: 88, h: 103 });
   const hl = "HUELLA DIGITAL";
   page.drawText(hl, { x: bx + 50 - b.widthOfTextAtSize(hl, 10.5) / 2, y: baseY - 58, size: 10.5, font: b, color: BLACK });
 

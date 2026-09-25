@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS public.donaciones (
   whatsapp_status text,
   whatsapp_status_at timestamptz,
   whatsapp_error text,
+  firma text,
+  huella text,
   busqueda text GENERATED ALWAYS AS (lower(
     coalesce(nombre_completo,'') || ' ' || coalesce(dni_ce,'') || ' ' || coalesce(iglesia,'') || ' ' ||
     coalesce(nombre_pastor,'') || ' ' || coalesce(ciudad,'') || ' ' || coalesce(distrito,'') || ' ' ||
@@ -68,6 +70,8 @@ CREATE TABLE IF NOT EXISTS public.donaciones (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE public.donaciones ADD COLUMN IF NOT EXISTS firma text;
+ALTER TABLE public.donaciones ADD COLUMN IF NOT EXISTS huella text;
 GRANT SELECT, UPDATE, DELETE ON public.donaciones TO authenticated;
 GRANT ALL ON public.donaciones TO service_role;
 ALTER TABLE public.donaciones ENABLE ROW LEVEL SECURITY;

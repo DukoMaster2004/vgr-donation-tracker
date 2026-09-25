@@ -875,6 +875,11 @@ Sección E — Datos de la donación:
 - Código de identificación de la tableta *: TAB-TEST-001 (3 a 40 letras, números o guiones; debe ser único)
 - Fecha de recepción *: 2026-09-24
 
+Sección F — Firma y huella del beneficiario:
+- Firma *: dibujarla con el dedo o el mouse dentro del recuadro (botón "Limpiar" para borrarla)
+- Huella digital *: presionar el pulgar sobre el recuadro (en pantallas táctiles) o dibujarla
+- Ambas quedan estampadas en la Declaración Jurada PDF y guardadas en el registro
+
 ==================================================
 
 This project was built with [Lovable](https://lovable.dev).

@@ -1,9 +1,10 @@
-import { useEffect, useRef, type ChangeEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { fieldLabels, type DonacionInput } from "@/lib/donacion-schema";
+import { generateLocalFingerprint, type FingerprintResult } from "@/lib/fingerprint";
+import { cn } from "@/lib/utils";
 
 export type FormValues = Record<keyof DonacionInput, string>;
 export type FormErrors = Partial<Record<keyof DonacionInput, string>>;
@@ -164,12 +165,27 @@ function SignaturePad({ value, onChange }: { value: string; onChange: (v: string
 
 function FingerprintCapture({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [fingerprint, setFingerprint] = useState<FingerprintResult | null>(null);
+
+  useEffect(() => {
+    if (!value) {
+      setFingerprint(null);
+      return;
+    }
+
+    void generateLocalFingerprint(value)
+      .then((result) => setFingerprint(result))
+      .catch(() => setFingerprint(null));
+  }, [value]);
 
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result ?? ""));
+    reader.onload = () => {
+      const imageDataUrl = String(reader.result ?? "");
+      onChange(imageDataUrl);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -185,8 +201,15 @@ function FingerprintCapture({ value, onChange }: { value: string; onChange: (v: 
         className="h-auto py-2"
       />
       {value ? (
-        <div className="space-y-2 rounded-md border bg-muted/20 p-2">
+        <div className="space-y-3 rounded-md border bg-muted/20 p-2">
           <img src={value} alt="Huella digital" className="max-h-32 w-auto rounded-md object-contain" />
+          {fingerprint ? (
+            <div className="space-y-2 rounded-md border bg-background p-2">
+              <div className="text-xs font-medium text-muted-foreground">Huella local generada</div>
+              <div className="overflow-hidden rounded border bg-[#050816] p-2 [&_svg]:h-32 [&_svg]:w-full [&_svg]:object-contain" dangerouslySetInnerHTML={{ __html: fingerprint.visual_fingerprint }} />
+              <div className="text-[10px] break-all text-muted-foreground">Hash: {fingerprint.hash}</div>
+            </div>
+          ) : null}
           <Button type="button" variant="outline" size="sm" onClick={() => onChange("")}>Quitar</Button>
         </div>
       ) : (

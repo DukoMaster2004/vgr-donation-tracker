@@ -4,7 +4,7 @@
 // Never commit that key or run this script from client-side code.
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env["SUPABASE_URL"] ?? "https://epgochsijjvqerfivxgs.supabase.co";
+const SUPABASE_URL = process.env["SUPABASE_URL"] ?? "https://iaysswqvpbycocawjsgf.supabase.co";
 const SERVICE_ROLE_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
 const email = process.argv[2] ?? "ssj52949@gmail.com";
 const password = process.argv[3] ?? "josue20026";

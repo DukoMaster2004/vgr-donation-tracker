@@ -29,25 +29,23 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
 
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
+  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] as string | undefined;
+  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] as string | undefined;
 
   const hasPlaceholderValue = (value?: string) => !!value && value.startsWith('REPLACE_WITH_');
   const isMissingEnv = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || hasPlaceholderValue(SUPABASE_PUBLISHABLE_KEY) || !SUPABASE_PUBLISHABLE_KEY.trim();
 
   if (isMissingEnv) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY || hasPlaceholderValue(SUPABASE_PUBLISHABLE_KEY) || !SUPABASE_PUBLISHABLE_KEY.trim() ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
+      ...(!SUPABASE_URL ? ['VITE_SUPABASE_URL'] : []),
+      ...(!SUPABASE_PUBLISHABLE_KEY || hasPlaceholderValue(SUPABASE_PUBLISHABLE_KEY) || !SUPABASE_PUBLISHABLE_KEY.trim() ? ['VITE_SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
     const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Set the actual values from Supabase > Settings > API.`;
     console.error(`[Supabase] ${message}`);
 
-    return createClient<Database>(SUPABASE_URL || 'https://iaysswqvpbycocawjsgf.supabase.co', SUPABASE_PUBLISHABLE_KEY || 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY', {
+    return createClient<Database>('https://placeholder.supabase.co', 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY', {
       global: {
-        fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY || 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY'),
+        fetch: createSupabaseFetch('REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY'),
       },
       auth: {
         storage: brokeredPreviewStorage(),

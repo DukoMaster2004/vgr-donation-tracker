@@ -15,15 +15,12 @@ export type RegistroResult =
     };
 
 export const registrarDonacion = createServerFn({ method: "POST" })
-  .validator((input: unknown) => donacionSchema.parse(input))
+  .inputValidator((input: unknown) => donacionSchema.parse(input))
   .handler(async ({ data }): Promise<RegistroResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const core = await import("./donaciones-core.server");
 
-    const nombre_completo =
-      `${data.primer_nombre} ${data.apellido_paterno} ${data.apellido_materno}`
-        .replace(/\s+/g, " ")
-        .trim();
+    const nombre_completo = `${data.primer_nombre} ${data.apellido_paterno} ${data.apellido_materno}`.replace(/\s+/g, " ").trim();
     const row = {
       ...data,
       iglesia: data.iglesia || null,
@@ -32,18 +29,9 @@ export const registrarDonacion = createServerFn({ method: "POST" })
       tipo_donacion: "TABLETA GRÁFICA",
       estado: "confirmado" as const,
     };
-    const { data: inserted, error } = await supabaseAdmin
-      .from("donaciones")
-      .insert(row)
-      .select("id")
-      .single();
+    const { data: inserted, error } = await supabaseAdmin.from("donaciones").insert(row).select("id").single();
     if (error) {
-      if (error.code === "23505")
-        return {
-          ok: false,
-          duplicate: true,
-          error: "Este código de identificación ya ha sido registrado.",
-        };
+      if (error.code === "23505") return { ok: false, duplicate: true, error: "Este código de identificación ya ha sido registrado." };
       console.error(error);
       return { ok: false, error: "No se pudo guardar el registro. Intente nuevamente." };
     }
@@ -64,12 +52,10 @@ export const registrarDonacion = createServerFn({ method: "POST" })
   });
 
 async function assertAdmin(supabase: { rpc: (...a: never[]) => unknown }, userId: string) {
-  const { data } = await (
-    supabase as unknown as { rpc: (n: string, a: object) => Promise<{ data: boolean }> }
-  ).rpc("has_role", {
+  const { data } = (await (supabase as unknown as { rpc: (n: string, a: object) => Promise<{ data: boolean }> }).rpc("has_role", {
     _user_id: userId,
     _role: "admin",
-  });
+  }));
   if (!data) throw new Error("No autorizado");
 }
 
@@ -78,19 +64,10 @@ export const reclamarAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count, error } = await supabaseAdmin
-      .from("user_roles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
+    const { count, error } = await supabaseAdmin.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
     if (error) throw new Error(error.message);
-    if ((count ?? 0) > 0)
-      return {
-        ok: false as const,
-        error: "Ya existe un administrador. Pida acceso al administrador actual.",
-      };
-    const ins = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: context.userId, role: "admin" });
+    if ((count ?? 0) > 0) return { ok: false as const, error: "Ya existe un administrador. Pida acceso al administrador actual." };
+    const ins = await supabaseAdmin.from("user_roles").insert({ user_id: context.userId, role: "admin" });
     if (ins.error) throw new Error(ins.error.message);
     return { ok: true as const };
   });
@@ -99,14 +76,8 @@ export const estadoAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    const { count } = await supabaseAdmin
-      .from("user_roles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { count } = await supabaseAdmin.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
     return { isAdmin: !!isAdmin, adminExists: (count ?? 0) > 0 };
   });
 
@@ -121,7 +92,7 @@ async function loadRow(id: string) {
 
 export const reenviarWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((i: unknown) => idInput.parse(i))
+  .inputValidator((i: unknown) => idInput.parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const { supabaseAdmin, row } = await loadRow(data.id);
@@ -136,7 +107,7 @@ export const reenviarWhatsApp = createServerFn({ method: "POST" })
 
 export const regenerarDocumentos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((i: unknown) => idInput.parse(i))
+  .inputValidator((i: unknown) => idInput.parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const { supabaseAdmin, row } = await loadRow(data.id);
@@ -147,23 +118,14 @@ export const regenerarDocumentos = createServerFn({ method: "POST" })
 
 export const actualizarDonacion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((i: unknown) =>
-    z.object({ id: z.string().uuid(), values: donacionSchema }).parse(i),
-  )
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), values: donacionSchema }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const v = data.values;
-    const nombre_completo = `${v.primer_nombre} ${v.apellido_paterno} ${v.apellido_materno}`
-      .replace(/\s+/g, " ")
-      .trim();
+    const nombre_completo = `${v.primer_nombre} ${v.apellido_paterno} ${v.apellido_materno}`.replace(/\s+/g, " ").trim();
     const { error } = await context.supabase
       .from("donaciones")
-      .update({
-        ...v,
-        iglesia: v.iglesia || null,
-        direccion_linea_2: v.direccion_linea_2 || null,
-        nombre_completo,
-      })
+      .update({ ...v, iglesia: v.iglesia || null, direccion_linea_2: v.direccion_linea_2 || null, nombre_completo })
       .eq("id", data.id);
     if (error) {
       if (error.code === "23505") {
@@ -172,10 +134,7 @@ export const actualizarDonacion = createServerFn({ method: "POST" })
           .select("nombre_completo, dni_ce")
           .eq("codigo_identificacion", v.codigo_identificacion)
           .maybeSingle();
-        return {
-          ok: false as const,
-          error: `Este código de identificación ya ha sido registrado${other ? ` (pertenece a ${other.nombre_completo}, DNI/CE ${other.dni_ce})` : ""}.`,
-        };
+        return { ok: false as const, error: `Este código de identificación ya ha sido registrado${other ? ` (pertenece a ${other.nombre_completo}, DNI/CE ${other.dni_ce})` : ""}.` };
       }
       return { ok: false as const, error: error.message };
     }

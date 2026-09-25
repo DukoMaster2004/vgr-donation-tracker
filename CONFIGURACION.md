@@ -1,23 +1,25 @@
 # Configuración
 
-WhatsApp se envía directamente vía la API oficial de Meta (WhatsApp Cloud API), sin pasar por Lovable.
-
 Secrets (Project Settings → Secrets):
-- WHATSAPP_API_KEY — token de acceso permanente de la app de Meta (System User Token).
-- WHATSAPP_PHONE_NUMBER_ID — ID del número de teléfono en Meta for Developers (WhatsApp → API Setup).
-- WHATSAPP_APP_SECRET — App Secret de la app de Meta, para verificar la firma del webhook (X-Hub-Signature-256).
-- WHATSAPP_VERIFY_TOKEN — token propio que usted define, usado en el handshake de verificación del webhook (hub.verify_token).
-- WHATSAPP_ADMIN_NUMBER — su número con código de país, solo dígitos (por defecto 51951012633 si no se define).
+- WHATSAPP_API_KEY / LOVABLE_API_KEY — se crean al conectar WhatsApp (Connectors → WhatsApp).
+- WHATSAPP_ADMIN_NUMBER — su número con código de país, solo dígitos (ej. 51999999999).
 - WHATSAPP_TEMPLATE_NAME (opcional) — plantilla aprobada por Meta, necesaria para mensajes fuera de la ventana de 24 h. Parámetros del cuerpo: {{1}} nombre, {{2}} DNI/CE, {{3}} código, {{4}} fecha, {{5}} enlace de la declaración.
 - WHATSAPP_TEMPLATE_LANG (opcional, por defecto `es`).
 
 Base de datos y almacenamiento ya configurados por Lovable Cloud (no requieren claves).
 
-Webhook: configure en Meta for Developers → WhatsApp → Configuration → Webhook, con URL `https://<su-dominio>/api/public/whatsapp/webhook` y el mismo valor de WHATSAPP_VERIFY_TOKEN. Suscríbase al campo `messages`.
+Webhook de estados: POST /api/public/whatsapp/webhook — seleccione este proyecto en Connectors → WhatsApp → Incoming messages.
 
-Inicio de sesión con Google: habilite el proveedor Google en Supabase (Authentication → Providers → Google) con su Client ID y Client Secret, y agregue `<su-dominio>/auth` como Redirect URL autorizado.
-
-Administrador: cree su cuenta en /auth (con correo o Google) y pulse "Activar mi cuenta como administrador" (solo funciona mientras no exista otro administrador).
+Administrador: cree su cuenta en /auth y pulse "Activar mi cuenta como administrador" (solo funciona mientras no exista otro administrador).
 
 Logo oficial: reemplace `OFFICIAL_LOGO_URL` en src/components/brand/VgrLogo.tsx.
 
+## Publicar en Vercel
+1. Importe el repositorio en Vercel (Framework: Other). Build command: `bun run build` (o `npm run build`).
+2. Vercel detecta la variable `VERCEL` y el proyecto se compila automáticamente para Vercel.
+3. En Vercel → Settings → Environment Variables agregue:
+   - VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PROJECT_ID (copiar del archivo .env)
+   - SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (mismos valores)
+   - SUPABASE_SERVICE_ROLE_KEY (clave privada del backend; necesaria para guardar registros)
+   - WHATSAPP_ADMIN_NUMBER, WHATSAPP_API_KEY, LOVABLE_API_KEY y opcionales de plantilla
+También puede publicar directamente con el botón Publicar de Lovable sin configurar nada.

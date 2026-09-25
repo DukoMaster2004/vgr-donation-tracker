@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { VgrLogo } from "@/components/brand/VgrLogo";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -61,8 +60,11 @@ function AuthPage() {
   };
 
   const google = async () => {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth` });
-    if (r.error) toast.error("No se pudo iniciar sesión con Google");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth` },
+    });
+    if (error) toast.error("No se pudo iniciar sesión con Google");
   };
 
   return (

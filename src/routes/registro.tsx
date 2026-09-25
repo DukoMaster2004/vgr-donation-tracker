@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { VgrLogo } from "@/components/brand/VgrLogo";
@@ -15,9 +15,15 @@ export const Route = createFileRoute("/registro")({
   head: () => ({
     meta: [
       { title: "Registrar recepción — Voice of God Recordings" },
-      { name: "description", content: "Formulario de registro de recepción de tableta gráfica y Declaración Jurada." },
+      {
+        name: "description",
+        content: "Formulario de registro de recepción de tableta gráfica y Declaración Jurada.",
+      },
       { property: "og:title", content: "Registrar recepción — Voice of God Recordings" },
-      { property: "og:description", content: "Formulario de registro de recepción de tableta gráfica." },
+      {
+        property: "og:description",
+        content: "Formulario de registro de recepción de tableta gráfica.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -96,7 +102,9 @@ function Registro() {
       clearTimeout(t1);
       clearTimeout(t2);
       setStep("review");
-      toast.error("No se pudo completar el registro. Sus datos se conservaron; intente nuevamente.");
+      toast.error(
+        "No se pudo completar el registro. Sus datos se conservaron; intente nuevamente.",
+      );
       console.error(e);
     }
   };
@@ -107,11 +115,17 @@ function Registro() {
       <main className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
         <div className="mb-8 rounded-xl border bg-card p-6 text-center shadow-sm">
           <VgrLogo size="md" className="justify-center" />
-          <p className="mt-3 text-muted-foreground">Formulario de registro de recepción de donación</p>
+          <p className="mt-3 text-muted-foreground">
+            Formulario de registro de recepción de donación
+          </p>
           {step === "form" && (
             <>
-              <p className="mt-4 font-semibold uppercase tracking-wide">Por favor escribir con letra clara</p>
-              <p className="text-sm text-muted-foreground">Todos los campos marcados (*) requieren de la información</p>
+              <p className="mt-4 font-semibold uppercase tracking-wide">
+                Por favor escribir con letra clara
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Todos los campos marcados (*) requieren de la información
+              </p>
             </>
           )}
         </div>
@@ -120,7 +134,8 @@ function Registro() {
           <>
             <DonacionForm values={values} errors={errors} onChange={onChange} />
             <p className="mt-6 text-sm text-muted-foreground">
-              Toda la información en este formulario, incluyendo su dirección de email, será guardada de manera confidencial.
+              Toda la información en este formulario, incluyendo su dirección de email, será
+              guardada de manera confidencial.
             </p>
             <Button size="lg" className="mt-6 h-12 w-full text-base" onClick={review}>
               Revisar información
@@ -131,23 +146,36 @@ function Registro() {
         {step === "review" && (
           <section className="rounded-xl border bg-card p-6 shadow-sm">
             <h1 className="font-serif text-3xl font-semibold">Revisión de información</h1>
-            <p className="mt-1 text-muted-foreground">Verifique que todos los datos sean correctos.</p>
+            <p className="mt-1 text-muted-foreground">
+              Verifique que todos los datos sean correctos.
+            </p>
             <dl className="mt-6 grid gap-x-6 gap-y-3 sm:grid-cols-2">
               {(Object.keys(fieldLabels) as (keyof FormValues)[]).map((k) => (
                 <div key={k} className="border-b pb-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{fieldLabels[k]}</dt>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {fieldLabels[k]}
+                  </dt>
                   <dd className="mt-0.5 break-words font-medium">
-                    {k === "fecha_recepcion" && values[k] ? fechaLarga(values[k]).texto : values[k] || "—"}
+                    {k === "fecha_recepcion" && values[k]
+                      ? fechaLarga(values[k]).texto
+                      : values[k] || "—"}
                   </dd>
                 </div>
               ))}
               <div className="border-b pb-2">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tipo de donación</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Tipo de donación
+                </dt>
                 <dd className="mt-0.5 font-medium">TABLETA GRÁFICA</dd>
               </div>
             </dl>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button variant="outline" size="lg" className="h-12 flex-1" onClick={() => setStep("form")}>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-12 flex-1"
+                onClick={() => setStep("form")}
+              >
                 Editar información
               </Button>
               <Button size="lg" className="h-12 flex-1" onClick={confirm}>
@@ -158,7 +186,10 @@ function Registro() {
         )}
 
         {step === "saving" && (
-          <section className="flex flex-col items-center rounded-xl border bg-card p-12 text-center shadow-sm" aria-live="polite">
+          <section
+            className="flex flex-col items-center rounded-xl border bg-card p-12 text-center shadow-sm"
+            aria-live="polite"
+          >
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="mt-4 text-lg font-medium">{phase}</p>
           </section>
@@ -190,16 +221,32 @@ function Success({ r, onFinish }: { r: Ok; onFinish: () => void }) {
       {r.links ? (
         <p className="mt-2 text-muted-foreground">Su Declaración Jurada ha sido generada.</p>
       ) : (
-        <p className="mt-2 flex items-center justify-center gap-2 text-warning">
-          <AlertTriangle className="h-4 w-4" /> Sus datos se guardaron, pero los documentos no pudieron generarse. El administrador los generará.
+        <p className="mt-2 text-muted-foreground">
+          Se envió la notificación por WhatsApp con la información registrada.
         </p>
       )}
       {r.links && (
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <Button size="lg" className="h-12" disabled={!!busy} onClick={() => run("d", () => downloadUrl(r.links!.declaracion, `Declaracion_Jurada_${base}.pdf`))}>
-            {busy === "d" ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Descargar Declaración Jurada
+          <Button
+            size="lg"
+            className="h-12"
+            disabled={!!busy}
+            onClick={() =>
+              run("d", () => downloadUrl(r.links!.declaracion, `Declaracion_Jurada_${base}.pdf`))
+            }
+          >
+            {busy === "d" ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Descargar
+            Declaración Jurada
           </Button>
-          <Button size="lg" variant="secondary" className="h-12" disabled={!!busy} onClick={() => run("f", () => downloadUrl(r.links!.formulario, `Formulario_${base}.pdf`))}>
+          <Button
+            size="lg"
+            variant="secondary"
+            className="h-12"
+            disabled={!!busy}
+            onClick={() =>
+              run("f", () => downloadUrl(r.links!.formulario, `Formulario_${base}.pdf`))
+            }
+          >
             Descargar formulario
           </Button>
           <Button
@@ -221,7 +268,13 @@ function Success({ r, onFinish }: { r: Ok; onFinish: () => void }) {
           >
             Descargar ambos
           </Button>
-          <Button size="lg" variant="outline" className="h-12" disabled={!!busy} onClick={() => run("p", () => printPdf(r.links!.declaracion))}>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-12"
+            disabled={!!busy}
+            onClick={() => run("p", () => printPdf(r.links!.declaracion))}
+          >
             Imprimir documento
           </Button>
         </div>
@@ -230,7 +283,10 @@ function Success({ r, onFinish }: { r: Ok; onFinish: () => void }) {
         Finalizar
       </Button>
       <p className="mt-4 text-xs text-muted-foreground">
-        ¿Necesita ayuda? <Link to="/" className="underline">Volver al inicio</Link>
+        ¿Necesita ayuda?{" "}
+        <Link to="/" className="underline">
+          Volver al inicio
+        </Link>
       </p>
     </section>
   );

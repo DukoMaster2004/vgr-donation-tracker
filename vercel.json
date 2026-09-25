@@ -1,5 +1,14 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "nodeVersion": "22.x",
+  "env": {
+    "SKIP_ENV_VALIDATION": "true"
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }

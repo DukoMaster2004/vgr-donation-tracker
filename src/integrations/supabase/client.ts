@@ -34,14 +34,27 @@ function createSupabaseClient() {
   const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
 
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  const hasPlaceholderValue = (value?: string) => !!value && value.startsWith('REPLACE_WITH_');
+  const isMissingEnv = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || hasPlaceholderValue(SUPABASE_PUBLISHABLE_KEY) || !SUPABASE_PUBLISHABLE_KEY.trim();
+
+  if (isMissingEnv) {
     const missing = [
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
+      ...(!SUPABASE_PUBLISHABLE_KEY || hasPlaceholderValue(SUPABASE_PUBLISHABLE_KEY) || !SUPABASE_PUBLISHABLE_KEY.trim() ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Set the actual values from Supabase > Settings > API.`;
     console.error(`[Supabase] ${message}`);
-    throw new Error(message);
+
+    return createClient<Database>(SUPABASE_URL || 'https://iaysswqvpbycocawjsgf.supabase.co', SUPABASE_PUBLISHABLE_KEY || 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY', {
+      global: {
+        fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY || 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY'),
+      },
+      auth: {
+        storage: brokeredPreviewStorage(),
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

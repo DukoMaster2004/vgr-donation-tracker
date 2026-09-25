@@ -8,14 +8,6 @@ const txt = (label: string, max = 120) =>
     .max(max, { message: `${label} no puede superar ${max} caracteres` })
     .transform((v) => v.replace(/[<>]/g, ""));
 
-const imgPng = (label: string) =>
-  z
-    .string()
-    .max(500_000, { message: `${label} demasiado grande` })
-    .regex(/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/, {
-      message: `Debe registrar su ${label.toLowerCase()}`,
-    });
-
 export const donacionSchema = z.object({
   iglesia: z
     .string()
@@ -63,8 +55,6 @@ export const donacionSchema = z.object({
   fecha_recepcion: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Seleccione una fecha válida" }),
-  firma: imgPng("Firma"),
-  huella: imgPng("Huella"),
 });
 
 export type DonacionInput = z.input<typeof donacionSchema>;
@@ -90,8 +80,6 @@ export const emptyDonacion: Record<keyof DonacionInput, string> = {
   telefono: "",
   codigo_identificacion: "",
   fecha_recepcion: "",
-  firma: "",
-  huella: "",
 };
 
 export const fieldLabels: Record<keyof DonacionInput, string> = {
@@ -114,8 +102,6 @@ export const fieldLabels: Record<keyof DonacionInput, string> = {
   telefono: "Teléfono",
   codigo_identificacion: "Código de identificación de la tableta",
   fecha_recepcion: "Fecha de recepción",
-  firma: "Firma del beneficiario",
-  huella: "Huella digital",
 };
 
 export const ESTADOS = {

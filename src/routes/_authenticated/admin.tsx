@@ -165,7 +165,7 @@ function Detalle({ row, onClose }: { row: Row; onClose: () => void }) {
             {row.whatsapp_error && <p className="text-sm text-destructive">WhatsApp: {row.whatsapp_error}</p>}
             <dl className="grid gap-2 sm:grid-cols-2">
               {(Object.keys(fieldLabels) as (keyof typeof fieldLabels)[]).map((k) => (
-                <div key={k} className="border-b pb-1"><dt className="text-xs text-muted-foreground">{fieldLabels[k]}</dt><dd>{k === "firma" || k === "huella" ? ((row as unknown as Record<string,string>)[k] ? <img src={(row as unknown as Record<string,string>)[k]} alt={fieldLabels[k]} className="h-20 rounded border bg-white object-contain p-0.5" /> : "—") : k === "fecha_recepcion" && (row as unknown as Record<string,string>)[k] ? fechaLarga(row[k] as string).texto : (row as unknown as Record<string,string>)[k] || "—"}</dd></div>
+                <div key={k} className="border-b pb-1"><dt className="text-xs text-muted-foreground">{fieldLabels[k]}</dt><dd>{k === "fecha_recepcion" && (row as unknown as Record<string,string>)[k] ? fechaLarga(row[k] as string).texto : (row as unknown as Record<string,string>)[k] || "—"}</dd></div>
               ))}
             </dl>
             <div className="grid gap-2 sm:grid-cols-3">

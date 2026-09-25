@@ -30,8 +30,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+<<<<<<< HEAD
 
 # Airlock bootstrap
 .windsurf/
 .vercel
 .env*
+=======
+>>>>>>> e7c128d8dcc66ba30f7c4020d30514d62ca55e30

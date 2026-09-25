@@ -191,7 +191,7 @@ function Success({ r, onFinish }: { r: Ok; onFinish: () => void }) {
         <p className="mt-2 text-muted-foreground">Su Declaración Jurada ha sido generada.</p>
       ) : (
         <p className="mt-2 flex items-center justify-center gap-2 text-warning">
-          <AlertTriangle className="h-4 w-4" /> Sus datos se guardaron, pero los documentos no pudieron generarse. El administrador los generará.
+          <AlertTriangle className="h-4 w-4" /> Sus datos se registraron correctamente. Los documentos quedarán disponibles cuando el administrador los genere.
         </p>
       )}
       {r.links && (

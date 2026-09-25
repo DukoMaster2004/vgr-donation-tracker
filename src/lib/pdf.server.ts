@@ -229,13 +229,13 @@ export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
   page.drawText("DNI/CE:", { x, y: baseY - 12, size: 12, font: b, color: BLACK });
   page.drawText(d.dni_ce, { x: x + 58, y: baseY - 12, size: 11, font: r, color: BLACK });
 
-  const bx = W - 70 - 100;
+  const bx = W - 70 - 130;
   if (huellaImg) {
-    page.drawImage(huellaImg, { x: bx + 6, y: baseY - 30, width: 88, height: 88 });
+    page.drawImage(huellaImg, { x: bx + 8, y: baseY - 18, width: 118, height: 118 });
   } else {
-    page.drawRectangle({ x: bx, y: baseY - 40, width: 100, height: 115, borderColor: BLACK, borderWidth: 1 });
+    page.drawRectangle({ x: bx, y: baseY - 28, width: 132, height: 132, borderColor: BLACK, borderWidth: 1 });
     const hl = "HUELLA DIGITAL";
-    page.drawText(hl, { x: bx + 50 - b.widthOfTextAtSize(hl, 10.5) / 2, y: baseY - 58, size: 10.5, font: b, color: BLACK });
+    page.drawText(hl, { x: bx + 66 - b.widthOfTextAtSize(hl, 10.5) / 2, y: baseY - 48, size: 10.5, font: b, color: BLACK });
   }
 
   const foot = wrapPlain(ORG.direccionPie, r, 8.5, W - 160);
@@ -302,5 +302,15 @@ export async function buildFormularioPdf(d: DonacionRow): Promise<Uint8Array> {
     page.drawText(l, { x: 55, y, size: 10, font: r, color: BLACK });
     y -= 14;
   }
+
+  const huellaImg = await embedOptionalImage(pdf, d.huella);
+  const fingerprintY = 68;
+  page.drawText("HUELLA DIGITAL", { x: W - 180, y: fingerprintY + 130, size: 10.5, font: b, color: BLACK });
+  if (huellaImg) {
+    page.drawImage(huellaImg, { x: W - 170, y: fingerprintY, width: 120, height: 120 });
+  } else {
+    page.drawRectangle({ x: W - 170, y: fingerprintY, width: 120, height: 120, borderColor: BLACK, borderWidth: 1 });
+  }
+
   return pdf.save();
 }

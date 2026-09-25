@@ -202,11 +202,11 @@ function FingerprintCapture({ value, onChange }: { value: string; onChange: (v: 
       />
       {value ? (
         <div className="space-y-3 rounded-md border bg-muted/20 p-2">
-          <img src={value} alt="Huella digital" className="max-h-32 w-auto rounded-md object-contain" />
+          <img src={value} alt="Huella digital" className="mx-auto max-h-60 w-full max-w-[260px] rounded-md border bg-white object-contain shadow-sm" />
           {fingerprint ? (
             <div className="space-y-2 rounded-md border bg-background p-2">
               <div className="text-xs font-medium text-muted-foreground">Huella local generada</div>
-              <div className="overflow-hidden rounded border bg-[#050816] p-2 [&_svg]:h-32 [&_svg]:w-full [&_svg]:object-contain" dangerouslySetInnerHTML={{ __html: fingerprint.visual_fingerprint }} />
+              <div className="overflow-hidden rounded border bg-[#050816] p-2 [&_svg]:h-[220px] [&_svg]:w-full [&_svg]:object-contain" dangerouslySetInnerHTML={{ __html: fingerprint.visual_fingerprint }} />
               <div className="text-[10px] break-all text-muted-foreground">Hash: {fingerprint.hash}</div>
             </div>
           ) : null}

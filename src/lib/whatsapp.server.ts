@@ -10,7 +10,7 @@ export function buildAdminMessage(
   links?: { formulario?: string; declaracion?: string },
 ) {
   const dir = [d.direccion, d.direccion_linea_2].filter(Boolean).join(", ");
-  let msg = `NUEVO REGISTRO DE RECEPCIÓN DE DONACIÓN
+  let msg = `NUEVO REGISTRO DE RECEPCIÓN DE DONACIÓN oficialmente registrado.
 
 Nombre:
 ${d.nombre_completo}

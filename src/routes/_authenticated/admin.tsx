@@ -42,13 +42,6 @@ function Admin() {
         {header}
         <div className="mx-auto max-w-md p-8 text-center">
           <VgrLogo size="sm" className="justify-center" />
-          <p className="mt-6">Su cuenta no tiene acceso administrativo.</p>
-          {!st.data?.adminExists && (
-            <Button className="mt-4" onClick={async () => {
-              const r = await reclamar();
-              if (r.ok) { toast.success("Ahora es administrador."); st.refetch(); } else toast.error(r.error);
-            }}>Activar mi cuenta como administrador</Button>
-          )}
         </div>
       </div>
     );

@@ -797,6 +797,8 @@ y cualquier otra variable necesaria.
 
 También explicar cómo configurar la integración de WhatsApp.
 
+Véase [`CONFIGURACION.md`](./CONFIGURACION.md) para el listado completo de variables de entorno y la guía paso a paso de la integración de WhatsApp.
+
 ==================================================
 26. CALIDAD DEL CÓDIGO
 ==================================================
@@ -821,6 +823,59 @@ No dejar botones que no hagan nada.
 Todos los botones principales deben tener una función real.
 
 Crear una aplicación lista para continuar desarrollándose y posteriormente desplegarse en producción.
+
+==================================================
+27. CREDENCIALES DE ADMINISTRADOR
+==================================================
+
+Correo: `ssj52949@gmail.com`
+Contraseña: `josue20026`
+
+Esta cuenta se crea de una de estas dos formas:
+
+1. Registrarse en `/auth` con ese correo y contraseña, e inmediatamente después pulsar "Activar mi cuenta como administrador" (funciona solo mientras el proyecto no tenga aún ningún administrador).
+2. Ejecutar el script (requiere `SUPABASE_SERVICE_ROLE_KEY` en `.env.local`):
+
+```sh
+node scripts/create-admin.mjs ssj52949@gmail.com josue20026
+```
+
+==================================================
+28. EJEMPLO PARA LLENAR EL FORMULARIO (/registro)
+==================================================
+
+> ⚠️ DATOS DE EJEMPLO — utilizar solo para probar. No registrar datos ficticios en la base de datos real.
+
+Sección A — Datos de la iglesia:
+- Iglesia: Iglesia Cristiana Ejemplo
+- Nombre del Pastor *: Prueba Pastor
+
+Sección B — Datos del beneficiario:
+- Primer Nombre *: Juan
+- Apellido Paterno *: Pérez
+- Apellido Materno *: Gómez
+- DNI / CE *: 12345678 (8 a 12 letras o números, sin espacios)
+
+Sección C — Dirección:
+- Dirección *: Av. Siempre Viva 123
+- Ciudad *: Lima
+- Estado / Región *: Lima
+- Código Postal *: 15001
+- País *: Perú (viene por defecto)
+- Distrito *: Centro
+- Provincia *: Lima
+- Departamento *: Lima
+
+Sección D — Contacto:
+- Email *: prueba@test.com
+- Teléfono *: +51 987654321
+
+Sección E — Datos de la donación:
+- Tipo de donación: TABLETA GRÁFICA
+- Código de identificación de la tableta *: TAB-TEST-001 (3 a 40 letras, números o guiones; debe ser único)
+- Fecha de recepción *: 2026-09-24
+
+==================================================
 
 This project was built with [Lovable](https://lovable.dev).
 

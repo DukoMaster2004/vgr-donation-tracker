@@ -17,7 +17,8 @@ export type RegistroResult =
 export const registrarDonacion = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => donacionSchema.parse(input))
   .handler(async ({ data }): Promise<RegistroResult> => {
-    const { sendAdminWhatsApp } = await import("./whatsapp.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const core = await import("./donaciones-core.server");
 
     const nombre_completo =
       `${data.primer_nombre} ${data.apellido_paterno} ${data.apellido_materno}`
@@ -31,18 +32,35 @@ export const registrarDonacion = createServerFn({ method: "POST" })
       tipo_donacion: "TABLETA GRÁFICA",
       estado: "confirmado" as const,
     };
-    const id = crypto.randomUUID();
-    // Sent in the background so the registration always responds immediately,
-    // regardless of how long WhatsApp/Meta takes or whether it fails.
-    sendAdminWhatsApp(row, {}).catch((e) => console.error("WhatsApp send failed:", e));
-    return {
-      ok: true,
-      id,
-      nombre: nombre_completo,
-      links: null,
-      docsError: null,
-      whatsapp: { ok: true },
-    };
+    const { data: inserted, error } = await supabaseAdmin
+      .from("donaciones")
+      .insert(row)
+      .select("id")
+      .single();
+    if (error) {
+      if (error.code === "23505")
+        return {
+          ok: false,
+          duplicate: true,
+          error: "Este código de identificación ya ha sido registrado.",
+        };
+      console.error(error);
+      return { ok: false, error: "No se pudo guardar el registro. Intente nuevamente." };
+    }
+    const id = inserted.id;
+    let links: { formulario: string; declaracion: string } | null = null;
+    let docsError: string | null = null;
+    let whatsapp: { ok: boolean; error?: string } = { ok: false, error: "No enviado" };
+    try {
+      const paths = await core.generateAndStoreDocs(supabaseAdmin, id, row);
+      links = await core.signedUrls(supabaseAdmin, paths);
+      const wa = await core.notifyWhatsApp(supabaseAdmin, id, row, paths);
+      whatsapp = wa.ok ? { ok: true } : { ok: false, error: wa.error };
+    } catch (e) {
+      console.error(e);
+      docsError = e instanceof Error ? e.message : String(e);
+    }
+    return { ok: true, id, nombre: nombre_completo, links, docsError, whatsapp };
   });
 
 async function assertAdmin(supabase: { rpc: (...a: never[]) => unknown }, userId: string) {

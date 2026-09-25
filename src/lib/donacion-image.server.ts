@@ -25,24 +25,9 @@ function b64ToBytes(b64: string): Uint8Array {
 }
 
 async function initResvg(): Promise<void> {
-  try {
-    // On Cloudflare Workers, Nitro/unwasm rewrites this import to the emitted .wasm asset,
-    // which workerd compiles ahead of time to a WebAssembly.Module.
-    const { default: wasm } = (await import("@resvg/resvg-wasm/index_bg.wasm?module")) as {
-      default: WebAssembly.Module;
-    };
-    if (!(wasm instanceof WebAssembly.Module)) {
-      throw new Error("resvg wasm import did not yield a WebAssembly.Module");
-    }
-    await initWasm(wasm);
-  } catch {
-    // Node (vite dev / prerender): the ?module import isn't a compiled module here, so
-    // read the wasm bytes from node_modules instead.
-    const { createRequire } = await import("node:module");
-    const { readFile } = await import("node:fs/promises");
-    const wasmPath = createRequire(import.meta.url).resolve("@resvg/resvg-wasm/index_bg.wasm");
-    await initWasm(new Uint8Array(await readFile(wasmPath)));
-  }
+  // The wasm is inlined as base64 so the bundle works identically in Node (vite dev)
+  // and Cloudflare Workers, where runtime .wasm imports are not resolvable.
+  await initWasm(b64ToBytes(RESVG_WASM_B64));
 }
 
 await initResvg();
@@ -98,11 +83,11 @@ export function buildAdminImage(d: DonacionRow): Buffer {
       fontBuffers: [b64ToBytes(ARIMO_REGULAR_B64), b64ToBytes(ARIMO_BOLD_B64)],
       loadSystemFonts: false,
       defaultFontFamily: "Arimo",
-      sansSerif: "Arimo",
-      serif: "Arimo",
-      cursive: "Arimo",
-      fantasy: "Arimo",
-      monospace: "Arimo",
+      sansSerifFamily: "Arimo",
+      serifFamily: "Arimo",
+      cursiveFamily: "Arimo",
+      fantasyFamily: "Arimo",
+      monospaceFamily: "Arimo",
     },
   });
   return Buffer.from(resvg.render().asPng());

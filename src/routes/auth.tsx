@@ -34,17 +34,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const reclamar = useServerFn(reclamarAdmin);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
-    });
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) navigate({ to: "/admin" });
-    });
-    return () => data.subscription.unsubscribe();
-  }, [navigate]);
-
-  const finishAuth = async () => {
+  const handleAuthSuccess = async () => {
     try {
       const result = await reclamar();
       if (result.ok) {
@@ -59,6 +49,28 @@ function AuthPage() {
     }
   };
 
+  useEffect(() => {
+    let active = true;
+
+    const syncSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!active || !data.session) return;
+      await handleAuthSuccess();
+    };
+
+    void syncSession();
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active || !session) return;
+      void handleAuthSuccess();
+    });
+
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
+  }, [navigate, reclamar]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -66,7 +78,7 @@ function AuthPage() {
       if (mode === "in") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await finishAuth();
+        await handleAuthSuccess();
         return;
       }
 
@@ -76,7 +88,7 @@ function AuthPage() {
         toast.success("Revise su correo para confirmar la cuenta.");
         return;
       }
-      await finishAuth();
+      await handleAuthSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error de autenticación";
       toast.error(message.includes("Invalid login credentials") ? "Credenciales inválidas. Revise el email y la contraseña." : message);

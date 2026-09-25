@@ -1,14 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
-  "nodeVersion": "22.x",
-  "env": {
-    "SKIP_ENV_VALIDATION": "true"
-  },
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  }
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "tanstack-start"
 }

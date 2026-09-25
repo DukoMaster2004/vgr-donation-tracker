@@ -33,3 +33,5 @@ dist-ssr
 
 # Airlock bootstrap
 .windsurf/
+.vercel
+.env*

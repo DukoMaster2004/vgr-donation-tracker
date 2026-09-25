@@ -51,50 +51,54 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 function buildVisualFingerprint(seed: number): string {
   const ridges: string[] = [];
   const background = '#f3f3f1';
+  const rotation = ((seed >> 3) % 360) * (Math.PI / 180);
 
-  for (let i = 0; i < 28; i += 1) {
+  for (let i = 0; i < 24; i += 1) {
     const coords: string[] = [];
-    const baseRx = 18 + i * 7.2;
-    const baseRy = 26 + i * 7.6;
-    const rotation = 12 + i * 2.6 + ((seed >> ((i % 8) * 4)) & 0xf);
+    const rx = 26 + i * 7.2;
+    const ry = 30 + i * 7.5;
+    const twist = 0.7 + (i % 5) * 0.25;
 
-    for (let step = 0; step <= 720; step += 2) {
-      const angle = (step / 720) * Math.PI * 2;
-      const wobble = 8 * Math.sin(angle * (3.5 + (i % 4) * 0.3) + seed / 5000 + i * 0.9);
-      const x = 256 + (baseRx + wobble) * Math.cos(angle + rotation * (Math.PI / 180));
-      const y = 256 + (baseRy + wobble * 0.35) * Math.sin(angle + rotation * (Math.PI / 180));
-      coords.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    for (let step = 0; step <= 360; step += 2) {
+      const angle = (step / 360) * Math.PI * 2;
+      const waveX = Math.sin(angle * (2.2 + (i % 4) * 0.25) + seed / 7000) * (8 + i * 0.2);
+      const waveY = Math.cos(angle * (2.4 + (i % 3) * 0.2) + seed / 6500) * (7 + i * 0.18);
+      const x = 256 + (rx + waveX) * Math.cos(angle + rotation) * (1 + (i % 3) * 0.08);
+      const y = 256 + (ry + waveY) * Math.sin(angle + rotation) * (1 + (i % 4) * 0.06);
+      const swirlX = Math.cos(angle * twist + seed / 1000) * 6;
+      const swirlY = Math.sin(angle * twist + seed / 900) * 5;
+      coords.push(`${(x + swirlX).toFixed(2)},${(y + swirlY).toFixed(2)}`);
     }
 
     ridges.push(
-      `<polyline points="${coords.join(' ')}" fill="none" stroke="#111111" stroke-width="${(1.1 + (i % 5) * 0.2).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" opacity="${(0.92 - i * 0.012).toFixed(3)}"/>`,
+      `<polyline points="${coords.join(' ')}" fill="none" stroke="#111111" stroke-width="${(1.2 + (i % 5) * 0.18).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" opacity="${(0.95 - i * 0.015).toFixed(3)}"/>`,
     );
   }
 
-  const centralWhorl: string[] = [];
-  for (let i = 0; i < 12; i += 1) {
+  const whorl: string[] = [];
+  for (let i = 0; i < 16; i += 1) {
     const coords: string[] = [];
-    const radius = 14 + i * 9;
-    for (let step = 0; step <= 240; step += 2) {
-      const angle = (step / 240) * Math.PI + i * 0.45;
-      const offsetX = Math.cos(angle + seed / 9000) * (radius + (i % 2 === 0 ? 10 : 0));
-      const offsetY = Math.sin(angle + seed / 9000) * (radius * 0.7 + 5);
-      coords.push(`${(256 + offsetX).toFixed(2)},${(256 + offsetY).toFixed(2)}`);
+    const radius = 10 + i * 8;
+    for (let step = 0; step <= 360; step += 3) {
+      const angle = (step / 360) * Math.PI * 2;
+      const x = 256 + Math.cos(angle + i * 0.38 + seed / 12000) * (radius + Math.sin(angle * 8 + seed / 8000) * 10);
+      const y = 256 + Math.sin(angle + i * 0.38 + seed / 12000) * (radius * 0.8 + Math.cos(angle * 8 + seed / 9000) * 8);
+      coords.push(`${x.toFixed(2)},${y.toFixed(2)}`);
     }
-    centralWhorl.push(
-      `<polyline points="${coords.join(' ')}" fill="none" stroke="#111111" stroke-width="${(1.6 + (i % 3) * 0.4).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`,
+    whorl.push(
+      `<polyline points="${coords.join(' ')}" fill="none" stroke="#111111" stroke-width="${(1.4 + (i % 4) * 0.35).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`,
     );
   }
 
   const minutiae: string[] = [];
-  for (let i = 0; i < 18; i += 1) {
-    const cx = 256 + ((seed >> ((i * 3) % 16)) & 0x1f) - 15 + Math.cos(i * 1.7) * (15 + (i % 6));
-    const cy = 256 + ((seed >> ((i * 5 + 2) % 16)) & 0x1f) - 15 + Math.sin(i * 1.3) * (18 + (i % 5));
-    const r = 1.8 + (i % 4) * 0.7;
-    minutiae.push(`<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="#111111" opacity="0.75"/>`);
+  for (let i = 0; i < 20; i += 1) {
+    const cx = 256 + ((seed >> ((i * 3 + 1) % 16)) & 0x1f) - 15 + Math.cos(i * 1.9) * (22 + (i % 7));
+    const cy = 256 + ((seed >> ((i * 5 + 3) % 16)) & 0x1f) - 15 + Math.sin(i * 1.7) * (18 + (i % 5));
+    const radius = 1.7 + (i % 4) * 0.6;
+    minutiae.push(`<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}" fill="#111111" opacity="0.8"/>`);
   }
 
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' fill='${background}'/>${ridges.join('')}${centralWhorl.join('')}${minutiae.join('')}</svg>`;
+  return `<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' fill='${background}'/>${ridges.join('')}${whorl.join('')}${minutiae.join('')}</svg>`;
 }
 
 export async function generateLocalFingerprint(dataUrl: string): Promise<FingerprintResult> {

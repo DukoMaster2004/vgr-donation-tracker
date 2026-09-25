@@ -49,46 +49,52 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 }
 
 function buildVisualFingerprint(seed: number): string {
-  const polylineBands: string[] = [];
+  const ridges: string[] = [];
+  const background = '#f3f3f1';
 
-  for (let i = 0; i < 12; i += 1) {
-    const yBase = 30 + i * 38;
+  for (let i = 0; i < 28; i += 1) {
     const coords: string[] = [];
+    const baseRx = 18 + i * 7.2;
+    const baseRy = 26 + i * 7.6;
+    const rotation = 12 + i * 2.6 + ((seed >> ((i % 8) * 4)) & 0xf);
 
-    for (let x = 0; x <= 512; x += 18) {
-      const jitter = ((seed >> ((i + x / 18) % 16)) & 0x1f) - 16;
-      const y = yBase + jitter + 18 * Math.sin((x / 512) * (2 * Math.PI) * ((i % 5) + 1) + seed / 1000);
-      coords.push(`${x},${y.toFixed(2)}`);
+    for (let step = 0; step <= 720; step += 2) {
+      const angle = (step / 720) * Math.PI * 2;
+      const wobble = 8 * Math.sin(angle * (3.5 + (i % 4) * 0.3) + seed / 5000 + i * 0.9);
+      const x = 256 + (baseRx + wobble) * Math.cos(angle + rotation * (Math.PI / 180));
+      const y = 256 + (baseRy + wobble * 0.35) * Math.sin(angle + rotation * (Math.PI / 180));
+      coords.push(`${x.toFixed(2)},${y.toFixed(2)}`);
     }
 
-    const r = (seed >> ((i * 5) % 16)) & 0xff;
-    const g = (seed >> ((i * 7 + 3) % 16)) & 0xff;
-    const b = (seed >> ((i * 9 + 5) % 16)) & 0xff;
-    const stroke = `#${[r, g, b].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-
-    polylineBands.push(
-      `<polyline points="${coords.join(' ')}" fill="none" stroke="${stroke}" stroke-width="${(1.5 + (i % 4) * 0.6).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/>`,
+    ridges.push(
+      `<polyline points="${coords.join(' ')}" fill="none" stroke="#111111" stroke-width="${(1.1 + (i % 5) * 0.2).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" opacity="${(0.92 - i * 0.012).toFixed(3)}"/>`,
     );
   }
 
-  const rings: string[] = [];
-
-  for (let j = 0; j < 6; j += 1) {
-    const rr = (seed >> ((j * 5 + 2) % 16)) & 0xff;
-    const gg = (seed >> ((j * 7 + 4) % 16)) & 0xff;
-    const bb = (seed >> ((j * 9 + 6) % 16)) & 0xff;
-    const stroke = `#${[rr, gg, bb].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-    const radius = 48 + j * 22 + (seed % 9);
-    rings.push(
-      `<circle cx="256" cy="256" r="${radius}" fill="none" stroke="${stroke}" stroke-width="1.2" opacity="0.55" stroke-dasharray="${((seed >> (j % 8)) % 15) + 8} ${9 + (j * 3) % 7}"/>`,
+  const centralWhorl: string[] = [];
+  for (let i = 0; i < 12; i += 1) {
+    const coords: string[] = [];
+    const radius = 14 + i * 9;
+    for (let step = 0; step <= 240; step += 2) {
+      const angle = (step / 240) * Math.PI + i * 0.45;
+      const offsetX = Math.cos(angle + seed / 9000) * (radius + (i % 2 === 0 ? 10 : 0));
+      const offsetY = Math.sin(angle + seed / 9000) * (radius * 0.7 + 5);
+      coords.push(`${(256 + offsetX).toFixed(2)},${(256 + offsetY).toFixed(2)}`);
+    }
+    centralWhorl.push(
+      `<polyline points="${coords.join(' ')}" fill="none" stroke="#111111" stroke-width="${(1.6 + (i % 3) * 0.4).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`,
     );
   }
 
-  const centerStroke = `#${[(seed >> 8) & 0xff, (seed >> 16) & 0xff, (seed >> 24) & 0xff]
-    .map((value) => value.toString(16).padStart(2, '0'))
-    .join('')}`;
+  const minutiae: string[] = [];
+  for (let i = 0; i < 18; i += 1) {
+    const cx = 256 + ((seed >> ((i * 3) % 16)) & 0x1f) - 15 + Math.cos(i * 1.7) * (15 + (i % 6));
+    const cy = 256 + ((seed >> ((i * 5 + 2) % 16)) & 0x1f) - 15 + Math.sin(i * 1.3) * (18 + (i % 5));
+    const r = 1.8 + (i % 4) * 0.7;
+    minutiae.push(`<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="#111111" opacity="0.75"/>`);
+  }
 
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' fill='#050816'/>${polylineBands.join('')}<circle cx='256' cy='256' r='${34 + (seed % 20)}' fill='none' stroke='${centerStroke}' stroke-width='2' opacity='0.7'/>${rings.join('')}</svg>`;
+  return `<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' fill='${background}'/>${ridges.join('')}${centralWhorl.join('')}${minutiae.join('')}</svg>`;
 }
 
 export async function generateLocalFingerprint(dataUrl: string): Promise<FingerprintResult> {

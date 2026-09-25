@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".output",
+  "framework": "other",
+  "nodeVersion": "22.x"
+}

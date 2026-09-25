@@ -20,16 +20,26 @@ export const registrarDonacion = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const core = await import("./donaciones-core.server");
 
-    const nombre_completo = `${data.primer_nombre} ${data.apellido_paterno} ${data.apellido_materno}`.replace(/\s+/g, " ").trim();
+    const { firma, huella, ...donacionData } = data;
+    const nombre_completo = `${donacionData.primer_nombre} ${donacionData.apellido_paterno} ${donacionData.apellido_materno}`.replace(/\s+/g, " ").trim();
     const row = {
-      ...data,
-      iglesia: data.iglesia || null,
-      direccion_linea_2: data.direccion_linea_2 || null,
+      ...donacionData,
+      iglesia: donacionData.iglesia || null,
+      direccion_linea_2: donacionData.direccion_linea_2 || null,
       nombre_completo,
       tipo_donacion: "TABLETA GRÁFICA",
       estado: "confirmado" as const,
+      firma: firma || null,
+      huella: huella || null,
     };
-    const { data: inserted, error } = await supabaseAdmin.from("donaciones").insert(row).select("id").single();
+    const { data: inserted, error } = await supabaseAdmin.from("donaciones").insert({
+      ...donacionData,
+      iglesia: donacionData.iglesia || null,
+      direccion_linea_2: donacionData.direccion_linea_2 || null,
+      nombre_completo,
+      tipo_donacion: "TABLETA GRÁFICA",
+      estado: "confirmado" as const,
+    }).select("id").single();
     if (error) {
       if (error.code === "23505") return { ok: false, duplicate: true, error: "Este código de identificación ya ha sido registrado." };
       console.error(error);
@@ -40,7 +50,7 @@ export const registrarDonacion = createServerFn({ method: "POST" })
     let docsError: string | null = null;
     let whatsapp: { ok: boolean; error?: string } = { ok: false, error: "No enviado" };
     try {
-      const paths = await core.generateAndStoreDocs(supabaseAdmin, id, row);
+      const paths = await core.generateAndStoreDocs(supabaseAdmin, id, { ...row, firma: firma || null, huella: huella || null });
       links = await core.signedUrls(supabaseAdmin, paths);
       const wa = await core.notifyWhatsApp(supabaseAdmin, id, row, paths);
       whatsapp = wa.ok ? { ok: true } : { ok: false, error: wa.error };
@@ -122,10 +132,11 @@ export const actualizarDonacion = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const v = data.values;
-    const nombre_completo = `${v.primer_nombre} ${v.apellido_paterno} ${v.apellido_materno}`.replace(/\s+/g, " ").trim();
+    const { firma, huella, ...donacionData } = v;
+    const nombre_completo = `${donacionData.primer_nombre} ${donacionData.apellido_paterno} ${donacionData.apellido_materno}`.replace(/\s+/g, " ").trim();
     const { error } = await context.supabase
       .from("donaciones")
-      .update({ ...v, iglesia: v.iglesia || null, direccion_linea_2: v.direccion_linea_2 || null, nombre_completo })
+      .update({ ...donacionData, iglesia: donacionData.iglesia || null, direccion_linea_2: donacionData.direccion_linea_2 || null, nombre_completo })
       .eq("id", data.id);
     if (error) {
       if (error.code === "23505") {
@@ -140,6 +151,6 @@ export const actualizarDonacion = createServerFn({ method: "POST" })
     }
     const { supabaseAdmin, row } = await loadRow(data.id);
     const core = await import("./donaciones-core.server");
-    await core.generateAndStoreDocs(supabaseAdmin, row.id, row);
+    await core.generateAndStoreDocs(supabaseAdmin, row.id, { ...row, firma: data.values.firma || null, huella: data.values.huella || null });
     return { ok: true as const };
   });

@@ -1,3 +1,5 @@
+import { useEffect, useRef, type ChangeEvent, type PointerEvent } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -52,6 +54,148 @@ const sections: { title: string; letter: string; fields: { k: K; required?: bool
   },
 ];
 
+function SignaturePad({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#111827";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (!value) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = value;
+  }, [value]);
+
+  const getPos = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const start = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const pos = getPos(event);
+    if (!canvas || !ctx || !pos) return;
+    drawingRef.current = true;
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    ctx.lineTo(pos.x + 0.1, pos.y + 0.1);
+    ctx.stroke();
+    event.preventDefault();
+  };
+
+  const move = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const pos = getPos(event);
+    if (!canvas || !ctx || !pos) return;
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    event.preventDefault();
+  };
+
+  const end = () => {
+    drawingRef.current = false;
+    const canvas = canvasRef.current;
+    if (canvas) onChange(canvas.toDataURL("image/png"));
+  };
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    onChange("");
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>Firma</Label>
+      <div className="rounded-md border bg-white p-2">
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={220}
+          className="h-32 w-full rounded-sm border bg-white touch-none"
+          onPointerDown={start}
+          onPointerMove={move}
+          onPointerUp={end}
+          onPointerLeave={end}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={clear}>Borrar</Button>
+      </div>
+    </div>
+  );
+}
+
+function FingerprintCapture({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onChange(String(reader.result ?? ""));
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>Huella digital</Label>
+      <Input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        ref={fileRef}
+        onChange={handleFile}
+        className="h-auto py-2"
+      />
+      {value ? (
+        <div className="space-y-2 rounded-md border bg-muted/20 p-2">
+          <img src={value} alt="Huella digital" className="max-h-32 w-auto rounded-md object-contain" />
+          <Button type="button" variant="outline" size="sm" onClick={() => onChange("")}>Quitar</Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">Use la cámara del celular para tomar una foto de la huella del dedo.</p>
+      )}
+    </div>
+  );
+}
+
 export function DonacionForm({ values, errors, onChange }: { values: FormValues; errors: FormErrors; onChange: (k: K, v: string) => void }) {
   return (
     <div className="space-y-6">
@@ -97,6 +241,17 @@ export function DonacionForm({ values, errors, onChange }: { values: FormValues;
           </div>
         </section>
       ))}
+
+      <section className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+        <h2 className="flex items-center gap-3 text-lg font-semibold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground">F</span>
+          Firma y huella digital
+        </h2>
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <SignaturePad value={values.firma} onChange={(v) => onChange("firma", v)} />
+          <FingerprintCapture value={values.huella} onChange={(v) => onChange("huella", v)} />
+        </div>
+      </section>
     </div>
   );
 }

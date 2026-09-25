@@ -22,6 +22,8 @@ export type DonacionRow = {
   telefono: string;
   codigo_identificacion: string;
   fecha_recepcion: string;
+  firma?: string | null;
+  huella?: string | null;
 };
 
 // A4 in points
@@ -134,6 +136,20 @@ function wrapPlain(text: string, font: PDFFont, size: number, maxW: number) {
   return out;
 }
 
+async function embedOptionalImage(pdf: PDFDocument, dataUrl?: string | null) {
+  if (!dataUrl) return null;
+  if (dataUrl.startsWith("data:image/png")) return pdf.embedPng(dataUrl);
+  if (dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")) return pdf.embedJpg(dataUrl);
+  if (dataUrl.startsWith("data:image/webp")) {
+    try {
+      return pdf.embedPng(dataUrl);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Declaración Jurada - ${d.nombre_completo}`);
@@ -199,17 +215,28 @@ export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
 
   // Signature + fingerprint block
   const baseY = 230;
-  page.drawLine({ start: { x, y: baseY + 60 }, end: { x: x + 220, y: baseY + 60 }, thickness: 0.8, color: BLACK });
-  page.drawText("Firma", { x: x + 95, y: baseY + 46, size: 10, font: r, color: GREY });
+  const firmaImg = await embedOptionalImage(pdf, d.firma);
+  const huellaImg = await embedOptionalImage(pdf, d.huella);
+
+  if (firmaImg) {
+    page.drawImage(firmaImg, { x: x + 5, y: baseY + 5, width: 220, height: 70 });
+  } else {
+    page.drawLine({ start: { x, y: baseY + 60 }, end: { x: x + 220, y: baseY + 60 }, thickness: 0.8, color: BLACK });
+    page.drawText("Firma", { x: x + 95, y: baseY + 46, size: 10, font: r, color: GREY });
+  }
   page.drawText("Nombre:", { x, y: baseY + 10, size: 12, font: b, color: BLACK });
   page.drawText(d.nombre_completo, { x: x + 58, y: baseY + 10, size: 11, font: r, color: BLACK, maxWidth: 260 });
   page.drawText("DNI/CE:", { x, y: baseY - 12, size: 12, font: b, color: BLACK });
   page.drawText(d.dni_ce, { x: x + 58, y: baseY - 12, size: 11, font: r, color: BLACK });
 
   const bx = W - 70 - 100;
-  page.drawRectangle({ x: bx, y: baseY - 40, width: 100, height: 115, borderColor: BLACK, borderWidth: 1 });
-  const hl = "HUELLA DIGITAL";
-  page.drawText(hl, { x: bx + 50 - b.widthOfTextAtSize(hl, 10.5) / 2, y: baseY - 58, size: 10.5, font: b, color: BLACK });
+  if (huellaImg) {
+    page.drawImage(huellaImg, { x: bx + 6, y: baseY - 30, width: 88, height: 88 });
+  } else {
+    page.drawRectangle({ x: bx, y: baseY - 40, width: 100, height: 115, borderColor: BLACK, borderWidth: 1 });
+    const hl = "HUELLA DIGITAL";
+    page.drawText(hl, { x: bx + 50 - b.widthOfTextAtSize(hl, 10.5) / 2, y: baseY - 58, size: 10.5, font: b, color: BLACK });
+  }
 
   const foot = wrapPlain(ORG.direccionPie, r, 8.5, W - 160);
   foot.forEach((l, i) => {

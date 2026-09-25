@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { VgrLogo } from "@/components/brand/VgrLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { reclamarAdmin } from "@/lib/donaciones.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -30,6 +32,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const reclamar = useServerFn(reclamarAdmin);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -41,6 +44,21 @@ function AuthPage() {
     return () => data.subscription.unsubscribe();
   }, [navigate]);
 
+  const finishAuth = async () => {
+    try {
+      const result = await reclamar();
+      if (result.ok) {
+        toast.success("Cuenta activada como administrador.");
+      } else if (result.error && !result.error.includes("Ya existe un administrador")) {
+        toast.warning(result.error);
+      }
+    } catch {
+      // La cuenta puede existir y necesitar que el administrador la asigne más tarde.
+    } finally {
+      navigate({ to: "/admin", replace: true });
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -48,13 +66,20 @@ function AuthPage() {
       if (mode === "in") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-      } else {
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth` } });
-        if (error) throw error;
-        if (!data.session) toast.success("Revise su correo para confirmar la cuenta.");
+        await finishAuth();
+        return;
       }
+
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth` } });
+      if (error) throw error;
+      if (!data.session) {
+        toast.success("Revise su correo para confirmar la cuenta.");
+        return;
+      }
+      await finishAuth();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error de autenticación");
+      const message = err instanceof Error ? err.message : "Error de autenticación";
+      toast.error(message.includes("Invalid login credentials") ? "Credenciales inválidas. Revise el email y la contraseña." : message);
     } finally {
       setLoading(false);
     }

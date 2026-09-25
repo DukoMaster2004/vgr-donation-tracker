@@ -3,28 +3,20 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-<<<<<<< HEAD
+
   "engines": {
     "node": ">=22.x"
-=======
+  },
+
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "start": "node .output/server/index.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
->>>>>>> e7c128d8dcc66ba30f7c4020d30514d62ca55e30
   },
-"scripts": {
-  "dev": "vite dev",
-  "build": "vite build",
-  "start": "node .output/server/index.mjs",
-  "build:dev": "vite build --mode development",
-  "preview": "vite preview",
-  "lint": "eslint .",
-  "format": "prettier --write ."
-},
   "overrides": {
     "rolldown": "1.2.1"
   },

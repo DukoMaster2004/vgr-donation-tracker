@@ -54,13 +54,14 @@ export async function svgToPngDataUrl(svg: string): Promise<string> {
 }
 
 function decodeBase64DataUrl(dataUrl: string): Uint8Array {
-  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/i.exec(dataUrl);
+  const trimmed = dataUrl.trim();
+  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/i.exec(trimmed);
   if (!match) {
     throw new Error('The supplied value is not a valid data:image URL.');
   }
 
   const encoded = match[2];
-  if (!encoded) {
+  if (!encoded || !encoded.length) {
     throw new Error('The supplied data URL does not contain any image payload.');
   }
 

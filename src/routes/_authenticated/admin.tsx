@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { VgrLogo } from "@/components/brand/VgrLogo";
 import { DonacionForm, type FormValues } from "@/components/donacion/DonacionForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ESTADOS, emptyDonacion, fieldLabels, fechaLarga } from "@/lib/donacion-schema";
-import { actualizarDonacion, estadoAdmin, reclamarAdmin, reenviarWhatsApp } from "@/lib/donaciones.functions";
+import { actualizarDonacion, eliminarDonacion, estadoAdmin, reclamarAdmin, reenviarWhatsApp } from "@/lib/donaciones.functions";
 import { downloadUrl, downloadZip, slug } from "@/lib/downloads";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -59,6 +60,7 @@ function Dashboard() {
   const [dq, setDq] = useState("");
   const [f, setF] = useState({ desde: "", hasta: "", departamento: "", ciudad: "", iglesia: "", estado: "" });
   const [sel, setSel] = useState<Row | null>(null);
+  const eliminar = useServerFn(eliminarDonacion);
   useEffect(() => { const t = setTimeout(() => setDq(q), 300); return () => clearTimeout(t); }, [q]);
 
   const list = useQuery({
@@ -92,6 +94,47 @@ function Dashboard() {
     },
   });
 
+  const exportarTodoExcel = () => {
+    if (!list.data?.length) {
+      toast.error("No hay registros para exportar.");
+      return;
+    }
+    const rows = list.data.map((r) => ({
+      Nombre: r.nombre_completo,
+      "DNI/CE": r.dni_ce,
+      Teléfono: r.telefono,
+      Email: r.email,
+      Departamento: r.departamento,
+      Ciudad: r.ciudad,
+      Dirección: r.direccion,
+      Iglesia: r.iglesia,
+      "Código de identificación": r.codigo_identificacion,
+      "Fecha de recepción": r.fecha_recepcion,
+      Estado: ESTADOS[r.estado],
+      "Fecha de registro": r.created_at?.slice(0, 10),
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Donaciones");
+    XLSX.writeFile(wb, `donaciones_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Archivo Excel descargado.");
+  };
+
+  const handleDelete = async (id: string) => {
+    const ok = window.confirm("¿Eliminar este registro? Esta acción no se puede deshacer.");
+    if (!ok) return;
+    try {
+      const r = await eliminar({ data: { id } });
+      if (!r.ok) throw new Error("No se pudo eliminar el registro.");
+      toast.success("Registro eliminado.");
+      setSel(null);
+      await list.refetch();
+      await stats.refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo eliminar el registro.");
+    }
+  };
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <VgrLogo size="sm" />
@@ -102,7 +145,13 @@ function Dashboard() {
         ))}
       </div>
       <div className="mt-6 space-y-3 rounded-xl border bg-card p-4">
-        <Input placeholder="Buscar por nombre, DNI/CE, código, iglesia, email, teléfono..." value={q} onChange={(e) => setQ(e.target.value)} className="h-11" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Input placeholder="Buscar por nombre, DNI/CE, código, iglesia, email, teléfono..." value={q} onChange={(e) => setQ(e.target.value)} className="h-11" />
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportarTodoExcel}>Descargar todo (.xlsx)</Button>
+            {sel && <Button variant="destructive" onClick={() => void handleDelete(sel.id)}>Eliminar registro</Button>}
+          </div>
+        </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <Input type="date" value={f.desde} onChange={(e) => setF({ ...f, desde: e.target.value })} aria-label="Desde" />
           <Input type="date" value={f.hasta} onChange={(e) => setF({ ...f, hasta: e.target.value })} aria-label="Hasta" />
@@ -117,7 +166,7 @@ function Dashboard() {
       </div>
       <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">
-          <thead className="bg-muted text-left"><tr>{["Nombre", "DNI/CE", "Iglesia", "Ciudad", "Departamento", "Código", "Recepción", "Teléfono", "Email", "Registro", "Estado"].map((h) => <th key={h} className="whitespace-nowrap px-3 py-2">{h}</th>)}</tr></thead>
+          <thead className="bg-muted text-left"><tr>{["Nombre", "DNI/CE", "Iglesia", "Ciudad", "Departamento", "Código", "Recepción", "Teléfono", "Email", "Registro", "Estado", "Acciones"].map((h) => <th key={h} className="whitespace-nowrap px-3 py-2">{h}</th>)}</tr></thead>
           <tbody>
             {list.data?.map((r) => (
               <tr key={r.id} className="cursor-pointer border-t hover:bg-accent/50" onClick={() => setSel(r)}>
@@ -125,9 +174,21 @@ function Dashboard() {
                 <td className="px-3 py-2">{r.ciudad}</td><td className="px-3 py-2">{r.departamento}</td><td className="px-3 py-2">{r.codigo_identificacion}</td>
                 <td className="whitespace-nowrap px-3 py-2">{r.fecha_recepcion}</td><td className="px-3 py-2">{r.telefono}</td><td className="px-3 py-2">{r.email}</td>
                 <td className="whitespace-nowrap px-3 py-2">{r.created_at?.slice(0, 10)}</td><td className="px-3 py-2"><Badge variant="secondary">{ESTADOS[r.estado]}</Badge></td>
+                <td className="px-3 py-2">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDelete(r.id);
+                    }}
+                  >
+                    Eliminar
+                  </Button>
+                </td>
               </tr>
             ))}
-            {list.data?.length === 0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Sin registros.</td></tr>}
+            {list.data?.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-muted-foreground">Sin registros.</td></tr>}
           </tbody>
         </table>
       </div>

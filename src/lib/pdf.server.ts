@@ -136,16 +136,30 @@ function wrapPlain(text: string, font: PDFFont, size: number, maxW: number) {
   return out;
 }
 
+function hasUsableImagePayload(dataUrl?: string | null) {
+  if (!dataUrl || typeof dataUrl !== "string") return false;
+  const value = dataUrl.trim();
+  if (!value) return false;
+  if (!value.startsWith("data:image/")) return false;
+  const match = /^data:image\/[a-zA-Z0-9.+-]+;base64,(.*)$/i.exec(value);
+  if (!match) return true;
+  return !!match[1]?.length;
+}
+
 async function embedOptionalImage(pdf: PDFDocument, dataUrl?: string | null) {
-  if (!dataUrl) return null;
-  if (dataUrl.startsWith("data:image/png")) return pdf.embedPng(dataUrl);
-  if (dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")) return pdf.embedJpg(dataUrl);
-  if (dataUrl.startsWith("data:image/webp")) {
-    try {
-      return pdf.embedPng(dataUrl);
-    } catch {
-      return null;
+  if (!hasUsableImagePayload(dataUrl)) return null;
+  try {
+    if (dataUrl!.startsWith("data:image/png")) return pdf.embedPng(dataUrl!);
+    if (dataUrl!.startsWith("data:image/jpeg") || dataUrl!.startsWith("data:image/jpg")) return pdf.embedJpg(dataUrl!);
+    if (dataUrl!.startsWith("data:image/webp")) {
+      try {
+        return pdf.embedPng(dataUrl!);
+      } catch {
+        return null;
+      }
     }
+  } catch {
+    return null;
   }
   return null;
 }

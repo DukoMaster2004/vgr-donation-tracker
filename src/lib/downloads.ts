@@ -30,8 +30,13 @@ export async function downloadZip(files: { url: string; name: string }[], zipNam
 export async function printPdf(url: string) {
   const blob = await fetchBlob(url);
   const href = URL.createObjectURL(blob);
-  const w = window.open(href, "_blank");
-  if (w) w.addEventListener("load", () => w.print());
+  const w = window.open(href, "_blank", "noopener,noreferrer");
+  if (!w) {
+    saveBlob(blob, "documento.pdf");
+    return;
+  }
+  w.focus();
+  setTimeout(() => URL.revokeObjectURL(href), 30000);
 }
 
 export const slug = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 40);

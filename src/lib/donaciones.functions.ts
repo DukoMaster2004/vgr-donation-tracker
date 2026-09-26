@@ -115,6 +115,17 @@ export const reenviarWhatsApp = createServerFn({ method: "POST" })
     return res.ok ? { ok: true as const } : { ok: false as const, error: res.error };
   });
 
+export const eliminarDonacion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => idInput.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("donaciones").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
 export const regenerarDocumentos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => idInput.parse(i))

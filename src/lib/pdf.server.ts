@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { fechaLarga } from "./donacion-schema";
+import { generateFingerprint } from "./fingerprint";
 
 export type DonacionRow = {
   iglesia: string | null;
@@ -230,7 +231,6 @@ export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
   // Signature + fingerprint block
   const baseY = 230;
   const firmaImg = await embedOptionalImage(pdf, d.firma);
-  const huellaImg = await embedOptionalImage(pdf, d.huella);
 
   if (firmaImg) {
     page.drawImage(firmaImg, { x: x + 5, y: baseY + 5, width: 220, height: 70 });
@@ -243,14 +243,13 @@ export async function buildDeclaracionPdf(d: DonacionRow): Promise<Uint8Array> {
   page.drawText("DNI/CE:", { x, y: baseY - 12, size: 12, font: b, color: BLACK });
   page.drawText(d.dni_ce, { x: x + 58, y: baseY - 12, size: 11, font: r, color: BLACK });
 
-  const bx = W - 70 - 130;
-  if (huellaImg) {
-    page.drawImage(huellaImg, { x: bx + 8, y: baseY - 18, width: 118, height: 118 });
-  } else {
-    page.drawRectangle({ x: bx, y: baseY - 28, width: 132, height: 132, borderColor: BLACK, borderWidth: 1 });
-    const hl = "HUELLA DIGITAL";
-    page.drawText(hl, { x: bx + 66 - b.widthOfTextAtSize(hl, 10.5) / 2, y: baseY - 48, size: 10.5, font: b, color: BLACK });
-  }
+  const decorativeFingerprint = await generateFingerprint();
+  const decorativeFingerprintImg = await pdf.embedPng(decorativeFingerprint);
+  page.drawImage(decorativeFingerprintImg, { x: 450, y: 650, width: 100, height: 100 });
+
+  const fingerprintLabel = "Firma Digital Autenticada";
+  const fingerprintLabelX = 450 + (100 - b.widthOfTextAtSize(fingerprintLabel, 8)) / 2;
+  page.drawText(fingerprintLabel, { x: fingerprintLabelX, y: 640, size: 8, font: b, color: BLACK });
 
   const foot = wrapPlain(ORG.direccionPie, r, 8.5, W - 160);
   foot.forEach((l, i) => {
@@ -317,14 +316,13 @@ export async function buildFormularioPdf(d: DonacionRow): Promise<Uint8Array> {
     y -= 14;
   }
 
-  const huellaImg = await embedOptionalImage(pdf, d.huella);
-  const fingerprintY = 68;
-  page.drawText("HUELLA DIGITAL", { x: W - 180, y: fingerprintY + 130, size: 10.5, font: b, color: BLACK });
-  if (huellaImg) {
-    page.drawImage(huellaImg, { x: W - 170, y: fingerprintY, width: 120, height: 120 });
-  } else {
-    page.drawRectangle({ x: W - 170, y: fingerprintY, width: 120, height: 120, borderColor: BLACK, borderWidth: 1 });
-  }
+  const decorativeFingerprint = await generateFingerprint();
+  const decorativeFingerprintImg = await pdf.embedPng(decorativeFingerprint);
+  page.drawImage(decorativeFingerprintImg, { x: 450, y: 650, width: 100, height: 100 });
+
+  const fingerprintLabel = "Firma Digital Autenticada";
+  const fingerprintLabelX = 450 + (100 - b.widthOfTextAtSize(fingerprintLabel, 8)) / 2;
+  page.drawText(fingerprintLabel, { x: fingerprintLabelX, y: 640, size: 8, font: b, color: BLACK });
 
   return pdf.save();
 }

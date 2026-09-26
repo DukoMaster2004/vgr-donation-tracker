@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { generateLocalFingerprint, svgToPngDataUrl } from './fingerprint.ts';
+import { generateFingerprint, generateLocalFingerprint, svgToPngDataUrl } from './fingerprint.ts';
 
 describe('generateLocalFingerprint', () => {
   it('produces a deterministic hash and SVG for a base64 image', async () => {
@@ -20,5 +20,15 @@ describe('generateLocalFingerprint', () => {
     const png = await svgToPngDataUrl(result.visual_fingerprint);
 
     assert.match(png, /^data:image\/png;base64,/);
+  });
+
+  it('generates a deterministic PNG fingerprint buffer for PDFs', async () => {
+    const first = await generateFingerprint();
+    const second = await generateFingerprint();
+
+    assert.ok(Buffer.isBuffer(first));
+    assert.ok(first.length > 1000);
+    assert.deepEqual(first.equals(second), true);
+    assert.match(first.toString('hex').slice(0, 8), /^89504e47/);
   });
 });

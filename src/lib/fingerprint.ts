@@ -17,6 +17,53 @@ export type FingerprintResult = {
 
 const FALLBACK_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB4L8A4QAAAABJRU5ErkJggg==';
 
+export async function generateFingerprint(): Promise<Buffer> {
+  const canvasModule = await Function('return import("canvas")')() as typeof import('canvas');
+  const { createCanvas } = canvasModule;
+  const canvas = createCanvas(100, 100);
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = '#111111';
+  ctx.lineWidth = 1.1;
+
+  const cx = 50;
+  const cy = 50;
+  const rings = [14, 22, 30, 38, 46];
+  rings.forEach((radius) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+
+  for (let i = 0; i < 18; i += 1) {
+    const angle = (Math.PI * 2 * i) / 18;
+    const innerRadius = 8;
+    const outerRadius = 46;
+
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * innerRadius, cy + Math.sin(angle) * innerRadius);
+    ctx.lineTo(cx + Math.cos(angle) * outerRadius, cy + Math.sin(angle) * outerRadius);
+    ctx.stroke();
+  }
+
+  const arcs = [16, 24, 33];
+  arcs.forEach((radius, index) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, Math.PI * (0.18 + index * 0.08), Math.PI * (1.82 + index * 0.08));
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = '#111111';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  return canvas.toBuffer('image/png');
+}
+
 export async function svgToPngDataUrl(svg: string): Promise<string> {
   if (typeof document === 'undefined') {
     return FALLBACK_PNG_DATA_URL;

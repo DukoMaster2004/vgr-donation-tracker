@@ -74,13 +74,11 @@ export async function svgToPngDataUrl(svg: string): Promise<string> {
   const img = new Image();
 
   try {
-    const loaded = await new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = () => reject(new Error('No se pudo cargar la huella generada.'));
       img.src = url;
     });
-
-    if (!loaded) return FALLBACK_PNG_DATA_URL;
 
     const canvas = document.createElement('canvas');
     canvas.width = 512;

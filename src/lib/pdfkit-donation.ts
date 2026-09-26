@@ -1,89 +1,67 @@
-import { createWriteStream, existsSync, mkdirSync, statSync } from "node:fs";
-import path from "node:path";
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
-export type DonationPdfOptions = {
-  donorName?: string;
-  fileName?: string;
-  outputDir?: string;
-  title?: string;
-  amount?: string;
-};
-
-function sanitizeFilename(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9-_ ]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-}
-
-function findFingerprintAsset() {
-  const candidates = [
-    path.resolve(process.cwd(), "public/assets/fingerprint-profesional.png"),
-    path.resolve(process.cwd(), "assets/fingerprint-profesional.png"),
-    path.resolve(process.cwd(), "src/assets/fingerprint-profesional.png"),
-    path.resolve(process.cwd(), "public/fingerprint-profesional.png"),
-  ];
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate) && statSync(candidate).isFile()) {
-      return candidate;
-    }
+function generateDonationPDF(donorData: { nombre: any; dni: any; monto: any; }) {
+  const doc = new PDFDocument();
+  const filename = `Declaracion_Jurada_${Date.now()}.pdf`;
+  
+  // 🔥 RUTA ABSOLUTA - Usa esta directamente
+  const fingerprintPath = path.join(
+    __dirname,
+    '../../public/assets/fingerprint-profesional.png'
+  );
+  
+  console.log('🔍 Ruta calculada:', fingerprintPath);
+  console.log('✅ Archivo existe:', fs.existsSync(fingerprintPath));
+  
+  // Crear carpeta output si no existe
+  const outputDir = path.join(__dirname, '../../downloads');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
-
-  return null;
-}
-
-export async function createDonationPdf({
-  donorName = "Donante",
-  fileName,
-  outputDir = path.resolve(process.cwd(), "generated"),
-  title = "Comprobante de Donación",
-  amount = "0.00",
-}: DonationPdfOptions = {}): Promise<string> {
-  let pdfPath = "";
-
+  
+  const outputPath = path.join(outputDir, filename);
+  doc.pipe(fs.createWriteStream(outputPath));
+  
+  // Título
+  doc.fontSize(16).font('Helvetica-Bold')
+    .text('DECLARACIÓN JURADA DE RECEPCIÓN DE DONACIÓN', { align: 'center' });
+  doc.moveDown();
+  
+  // Contenido
+  doc.fontSize(11).font('Helvetica');
+  doc.text(`Yo, ${donorData.nombre}, identificado(a) con DNI/CE N° ${donorData.dni}`);
+  doc.text(`con domicilio en calle lima f1, urb lima f4`);
+  doc.moveDown();
+  doc.text(`Declaro que el día de hoy he recibido en calidad de`);
+  doc.text(`donación y sin costo alguno, conforme a ley.`);
+  doc.moveDown();
+  doc.text(`Monto: ${donorData.monto}`);
+  doc.text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`);
+  doc.moveDown(2);
+  
+  // ✅ INSERTAR HUELLA
   try {
-    const fingerprintAsset = findFingerprintAsset();
-    if (!fingerprintAsset) {
-      throw new Error("No se encontró la imagen /assets/fingerprint-profesional.png");
-    }
-
-    const resolvedDir = path.resolve(outputDir);
-    mkdirSync(resolvedDir, { recursive: true });
-
-    const rawBaseName = fileName ? fileName.replace(/\.pdf$/i, "") : donorName ?? "comprobante";
-    const safeBaseName = sanitizeFilename(rawBaseName || "comprobante");
-    const finalName = `${safeBaseName}.pdf`;
-    pdfPath = path.join(resolvedDir, finalName);
-
-    const { default: PDFDocument } = await import("pdfkit");
-    const doc = new PDFDocument({ size: "A4", margin: 50, bufferPages: true });
-    const stream = createWriteStream(pdfPath);
-
-    doc.pipe(stream);
-    doc.fontSize(22).text(title, { align: "center" });
-    doc.moveDown();
-    doc.fontSize(12).text(`Donante: ${donorName}`);
-    doc.text(`Monto: S/ ${amount}`);
-    doc.text("Comprobante válido para registro de donación.");
-    doc.moveDown(2);
-
-    doc.image(fingerprintAsset, 420, 100, { fit: [120, 160] });
-    doc.fontSize(11).text("Firma Digital Autenticada", 420, 270, { width: 120, align: "center" });
-
-    doc.end();
-
-    await new Promise<void>((resolve, reject) => {
-      stream.on("finish", () => resolve());
-      stream.on("error", (error) => reject(error));
+    doc.image(fingerprintPath, 420, 100, { 
+      width: 120, 
+      height: 160
     });
-
-    return finalName;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`No se pudo generar el PDF de donación: ${message}`);
+    
+    doc.fontSize(9).font('Helvetica-Bold')
+      .text('Firma Digital Autenticada', 420, 270, { align: 'center' });
+    
+    console.log('✅ Huella insertada exitosamente');
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('❌ Error al insertar huella:', message);
   }
+  
+  doc.end();
+  
+  console.log(`✅ PDF generado: ${outputPath}`);
+  return outputPath;
 }
+
+// Exportar
+module.exports = { generateDonationPDF };
